@@ -21,13 +21,15 @@ if __name__ == '__main__':
     os.path.exists(os.path.join(BASE_PATH, "linux_test.py")), \
     "Please run this script from the root djinni directory"
 
-  for entry in os.listdir(BASE_PATH):
-    im_dir = os.path.join(BASE_PATH, entry)
+  image_dirs = (
+    sys.argv[1:] or 
+	list(os.path.join(BASE_PATH, entry) for entry in os.listdir(BASE_PATH)))
+  for im_dir in image_dirs:
     if not os.path.exists(os.path.join(im_dir, "Dockerfile")):
       continue
 
-    im_name = "djinni_test." + entry
+    im_name = "djinni_test." + os.path.split(im_dir)[-1]
     run_in_shell("cd " + im_dir + " && docker build -t " + im_name + " .")
     run_in_shell(
-	  "docker run -v " + os.path.abspath(".") + ":/opt/djinni " + im_name)
+      "docker run -v " + os.path.abspath(".") + ":/opt/djinni " + im_name)
 
