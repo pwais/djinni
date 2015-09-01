@@ -17,8 +17,8 @@ RUN apt-get install -y openjdk-8-jdk ant
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 
 ENV CXX clang++
-RUN ln -s /usr/bin/clang++{-3.5,}
+RUN ln -s /usr/bin/clang++-3.5 /usr/bin/clang++
 
 VOLUME /opt/djinni
-CMD cd /opt/djinni/test-suite/java && ant -v test
+CMD cd /opt/djinni/test-suite/java && ant -v test && rm -rf /opt/djinni/test-suite/java/build
 

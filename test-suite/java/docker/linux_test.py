@@ -33,3 +33,4 @@ if __name__ == '__main__':
     run_in_shell(
       "docker run -v " + os.path.abspath(".") + ":/opt/djinni " + im_name)
 
+
