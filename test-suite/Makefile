@@ -9,3 +9,7 @@ objc:
 
 java:
 	cd java; ant test
+
+linux:
+	cd ..; ./test-suite/java/docker/linux_test.py
+
