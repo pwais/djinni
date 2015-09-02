@@ -13,8 +13,10 @@ RUN apt-get install -y libstdc++-4.9-dev
 RUN add-apt-repository ppa:openjdk-r/ppa && apt-get update
 RUN apt-get install -y openjdk-8-jdk ant
 
-# CMake 2.8.12 FindJNI is slightly broken for OpenJDK 8; let's help it find Java
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
+# Select Java 8
+RUN update-java-alternatives -s java-1.8.0-openjdk-amd64
+RUN rm /usr/lib/jvm/default-java
+RUN ln -s /usr/lib/jvm/java-8-openjdk-amd64 /usr/lib/jvm/default-java
 
 ENV CXX clang++
 RUN ln -s /usr/bin/clang++-3.5 /usr/bin/clang++

@@ -38,6 +38,6 @@ if __name__ == '__main__':
     im_name = "djinni_test." + os.path.split(im_dir)[-1]
     run_in_shell("cd " + im_dir + " && docker build -t " + im_name + " .")
     run_in_shell(
-      "docker run -v " + DJINNI_ROOT + ":/opt/djinni " + im_name)
+      "docker run --rm -v " + DJINNI_ROOT + ":/opt/djinni " + im_name)
 
 
