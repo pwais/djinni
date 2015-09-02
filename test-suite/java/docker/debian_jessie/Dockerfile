@@ -19,5 +19,5 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 ENV CXX clang++
 
 VOLUME /opt/djinni
-CMD cd /opt/djinni/test-suite/java && ant -v test && rm -rf /opt/djinni/test-suite/java/build 
+CMD cd /opt/djinni/test-suite/java && ant -v test && ant clean 
 

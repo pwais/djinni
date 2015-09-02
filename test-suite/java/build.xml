@@ -31,8 +31,6 @@
 	</target>
 	<target name="clean">
 		<delete dir="classes"/>
-		<exec executable="make" failonerror="true">
-			<arg value="clean"/>
-		</exec>
+		<delete dir="build"/>
 	</target>
 </project>

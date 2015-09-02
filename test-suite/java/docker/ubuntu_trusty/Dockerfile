@@ -20,5 +20,5 @@ ENV CXX clang++
 RUN ln -s /usr/bin/clang++-3.5 /usr/bin/clang++
 
 VOLUME /opt/djinni
-CMD cd /opt/djinni/test-suite/java && ant -v test && rm -rf /opt/djinni/test-suite/java/build
+CMD cd /opt/djinni/test-suite/java && ant -v test && ant clean
 
