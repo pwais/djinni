@@ -28,20 +28,23 @@ import java.nio.file.StandardCopyOption;
 
 /**
  * Utilities for loading native libraries containing djinni interfaces
- * and records.  To load libraries in your application at startup, add
- * this code to your main class:
- * <code>
- *   static {
- *     NativeLibUtils.loadLibs();
- *   }
- * </code>
+ * and records.  To load libraries in your application at startup,
+ * simply place them:
+ *  * inside the jar containing this code at the path `djinniNativeLibsJarPath`
+ *  * somewhere on the host filesystem and use the `djinniNativeLibsSysProp`
+ *      system property to provide path(s)
+ * 
+ * To *disable* automatic loading of native libs at startup (and require
+ * manual loading), use the `djinniLoadNativeLibsAtStartupProp` system
+ * property.
  */
-class NativeLibUtils {
+class NativeLibLoader {
   
   /**
    * Canonical directory in a jar containing (djinni-adapted) native libraries
    */
-  public static final String djinniNativeLibsJarPath = "lib";
+  public static final String djinniNativeLibsJarPath =
+      "resources/djinni_native_libs";
   
   /**
    * Load native libraries with djinni support from the (comma-separated)
@@ -50,12 +53,32 @@ class NativeLibUtils {
   public static final String djinniNativeLibsSysProp =
       "djinni.native_libs_dirs";
   
-  private NativeLibUtils() { } 
+  /**
+   * System property flag indicating if native libraries should be loaded
+   * on program startup
+   */
+  public static final String djinniLoadNativeLibsAtStartupProp = 
+      "djinni.load_native_libs_at_startup";
   
+  private NativeLibLoader() { } 
+  
+  // Try to load libs at program startup
+  static {
+    String doLoad = System.getProperty(djinniLoadNativeLibsAtStartupProp);
+    if (doLoad == null || Boolean.valueOf(doLoad)) {
+      try {
+        loadLibs();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+  
+  // Load native libs from canonical locations
   public static void loadLibs() throws URISyntaxException, IOException {
     // Try to load from Jar
     URI libs =
-        NativeLibUtils.class.getResource(djinniNativeLibsJarPath).toURI();
+        NativeLibLoader.class.getResource(djinniNativeLibsJarPath).toURI();
     if (libs.getScheme().equals("jar")) {
       loadLibFromJarPath(Paths.get(libs));
     } else {
@@ -65,11 +88,14 @@ class NativeLibUtils {
     
     // Try to load from system
     String localPaths = System.getProperty(djinniNativeLibsSysProp);
-    for (String localPath : localPaths.split(",")) {
-      loadLibsFromLocalPath(Paths.get(localPath));
+    if (localPaths != null) {
+      for (String localPath : localPaths.split(",")) {
+        loadLibsFromLocalPath(Paths.get(localPath));
+      }
     }
   }
   
+  // Load native lib(s) from the given `localPath` - a file or directory
   public static void loadLibsFromLocalPath(Path localPath) throws IOException {
     File localFile = localPath.toFile();
     if (!localFile.exists()) { return; }
@@ -82,17 +108,18 @@ class NativeLibUtils {
     }
   }
   
-  public static void loadLibFromJarPath(Path lib) throws IOException {
+  // Load a single native lib from a jar resource with path `libPath`
+  public static void loadLibFromJarPath(Path libPath) throws IOException {
 
     /*
      * System libraries *must* be loaded from the filesystem,
      * so copy the lib's data to a tempfile
      */ 
     InputStream libIn =
-        NativeLibUtils.class.getResourceAsStream(lib.toString());
+        NativeLibLoader.class.getResourceAsStream(libPath.toString());
     File tempLib =
         File.createTempFile(
-            lib.getName(lib.getNameCount() - 1).toString(),
+            libPath.getName(libPath.getNameCount() - 1).toString(),
               // name tempfile after the lib to ease debugging
             null);
     tempLib.deleteOnExit();
