@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.8)                                                                                                                                                    
 project(djinni-test-suite C CXX)
 
+##
+## Options
+##
+
+set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  CACHE PATH "Installation directory for libraries (default: prefix/lib).")
 
 ##
 ## Global Dependencies
@@ -47,4 +53,8 @@ include_directories(
   ${support_dir}
   ${JNI_INCLUDE_DIRS})
 target_link_libraries(DjinniTestNative ${JNI_LIBRARIES})
+install(
+  TARGETS DjinniTestNative
+  ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
+  LIBRARY DESTINATION "${LIB_INSTALL_DIR}")
 
