@@ -39,11 +39,9 @@ import java.nio.file.StandardCopyOption;
 class NativeLibUtils {
   
   /**
-   * Canonical directory in a jar containing native libraries with
-   * djinni support.
+   * Canonical directory in a jar containing (djinni-adapted) native libraries
    */
-  public static final String djinniNativeLibsJarPath =
-      "resources/djinni_native_libs";
+  public static final String djinniNativeLibsJarPath = "lib";
   
   /**
    * Load native libraries with djinni support from the (comma-separated)
