@@ -13,5 +13,5 @@ RUN rm /usr/lib/jvm/default-java
 RUN ln -s /usr/lib/jvm/java-8-openjdk-amd64 /usr/lib/jvm/default-java
 
 VOLUME /opt/djinni
-CMD cd /opt/djinni/test-suite/java && ant -v test && ant clean 
+CMD /opt/djinni/test-suite/java/docker/build_and_run_tests.sh
 

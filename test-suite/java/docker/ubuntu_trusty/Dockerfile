@@ -22,5 +22,5 @@ ENV CXX clang++
 RUN ln -s /usr/bin/clang++-3.5 /usr/bin/clang++
 
 VOLUME /opt/djinni
-CMD cd /opt/djinni/test-suite/java && ant -v test && ant clean
+CMD /opt/djinni/test-suite/java/docker/build_and_run_tests.sh
 

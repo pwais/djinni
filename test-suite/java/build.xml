@@ -52,7 +52,7 @@
 	  <zipgroupfileset dir="${basedir}" includes="*.jar" />
     </jar>
   </target>
-  <target name="run">
+  <target name="run-jar">
     <java jar="build/jar/DjinniTestSuite.jar" fork="true"/>
   </target>
   <target name="clean">
