@@ -1,7 +1,7 @@
 FROM ubuntu:utopic-20150625
 
 RUN apt-get update
-RUN apt-get -y install git build-essential clang cmake
+RUN apt-get -y install build-essential clang cmake
 
 RUN apt-get install -y openjdk-8-jdk ant
 

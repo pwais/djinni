@@ -5,7 +5,7 @@ RUN apt-get -y install build-essential clang-3.5 cmake
 
 RUN apt-get -y install software-properties-common
 
-# djinni requires some stdc++ 4.9 features, e.g. experimental/optional
+# djinni requires some libstdc++ 4.9 features, e.g. experimental/optional
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test && apt-get update
 RUN apt-get install -y libstdc++-4.9-dev
 
