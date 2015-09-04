@@ -20,9 +20,8 @@ Adding a Platform
     simply create a `Dockerfile` in the subdirectory that:
     * Builds an image with djinni dependencies (e.g. Java, a C++ compiler)
     * Expects djinni in `/opt/djinni/`
-    * Has a `CMD` to runs the JNI unit tests (i.e. `ant test && ant clean`)
+    * Has a `CMD` to runs the test script:
+	    `/opt/djinni/test-suite/java/docker/build_and_run_tests.sh`
  3. You can test the new platform using:
      `./test-suite/java/docker/linux_test.py ./test-suite/java/docker/my_platform`
-
-
 

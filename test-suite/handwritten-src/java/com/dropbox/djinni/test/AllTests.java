@@ -27,5 +27,5 @@ public class AllTests extends TestSuite {
     public static void main(String[] args) throws Exception {     
        NativeLibLoader.loadLibs();
        JUnitCore.main("com.dropbox.djinni.test.AllTests");            
-	}
+    }
 }

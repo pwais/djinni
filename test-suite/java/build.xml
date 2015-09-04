@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Djinni-test" default="test">
+<project name="Djinni-test">
   <target name="compile">
     <mkdir dir="build"/>
 	<mkdir dir="build/local"/>
@@ -28,17 +28,9 @@
   </target>
   <target name="test">
     <java classname="com.dropbox.djinni.test.AllTests" fork="true" failonerror="true">
-      <!--  Make the native shared library built above accessible to Java using
-              environment variable(s) for each platform:
-              DYLD_LIBRARY_PATH - for OSX only; Linux ignores.
-              LD_LIBRARY_PATH - for Linux; OSX ignores.
-              PATH - for Windows (TODO, not explicitly supported yet) 
-      <env key="DYLD_LIBRARY_PATH" value="${basedir}/build"/>
-      <env key="LD_LIBRARY_PATH" value="${basedir}/build"/> -->
       <classpath path="hamcrest-core-1.3.jar:junit-4.11.jar:build/classes"/>
       <jvmarg value="-Xcheck:jni"/>
 	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/build/local/lib"/>
-      <!-- <arg value="com.dropbox.djinni.test.AllTests"/> -->
     </java>
   </target>
   <target name="jar">
