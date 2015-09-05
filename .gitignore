@@ -28,3 +28,6 @@ DerivedData
 
 # djinni output directories
 djinni-output-temp/
+
+# profiling output
+callgrind.out.*
