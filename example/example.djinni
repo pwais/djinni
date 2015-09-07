@@ -1,5 +1,10 @@
+# Our demo will sort this list of strings
 item_list = record {
     items: list<string>;
+}
+
+buffer_list = record +c +j {
+    items: list<binary>;
 }
 
 sort_order = enum {
@@ -9,8 +14,13 @@ sort_order = enum {
 }
 
 sort_items = interface +c {
+    # Interface for iOS / Android demo
     sort(order: sort_order, items: item_list);
     static create_with_listener(listener: textbox_listener): sort_items;
+
+	# Interface for localhost demo
+	static run_sort_items(items: item_list);
+	static run_sort_buffers(items: buffer_list);
 }
 
 textbox_listener = interface +j +o {

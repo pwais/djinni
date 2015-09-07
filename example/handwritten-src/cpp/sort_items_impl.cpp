@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <random>
 
+
+
 namespace textsort {
 
 std::shared_ptr<SortItems> SortItems::create_with_listener(const std::shared_ptr<TextboxListener>& listener) {
@@ -31,6 +33,20 @@ void SortItemsImpl::sort(sort_order order, const ItemList & items) {
 
     // Pass result to client interface
     this->m_listener->update(ItemList(lines));
+}
+
+void SortItems::run_sort_items(const ItemList & items) {
+    auto lines = items.items;
+	std::sort(lines.begin(), lines.end(), std::less<std::string>());
+}
+
+void SortItems::run_sort_buffers(const BufferList & items) {
+    auto buffers = items.items;
+    //struct comp {
+    //bool operator()(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b) {
+    //    
+   // };	
+    std::sort(buffers.begin(), buffers.end(), std::less<std::vector<uint8_t>>());
 }
 
 }

@@ -7,19 +7,18 @@ import java.util.ArrayList;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
-/** Our demo will sort this list of strings */
-public final class ItemList {
+public class BufferListBase {
 
 
-    /*package*/ final ArrayList<String> mItems;
+    /*package*/ final ArrayList<byte[]> mItems;
 
-    public ItemList(
-            @Nonnull ArrayList<String> items) {
+    public BufferListBase(
+            @Nonnull ArrayList<byte[]> items) {
         this.mItems = items;
     }
 
     @Nonnull
-    public ArrayList<String> getItems() {
+    public ArrayList<byte[]> getItems() {
         return mItems;
     }
 }

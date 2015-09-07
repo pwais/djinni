@@ -3,10 +3,9 @@
 
 #import <Foundation/Foundation.h>
 
-/** Our demo will sort this list of strings */
-@interface TXSItemList : NSObject
+@interface TXSBufferList : NSObject
 - (nonnull instancetype)initWithItems:(nonnull NSArray *)items;
-+ (nonnull instancetype)itemListWithItems:(nonnull NSArray *)items;
++ (nonnull instancetype)bufferListWithItems:(nonnull NSArray *)items;
 
 @property (nonatomic, readonly, nonnull) NSArray * items;
 

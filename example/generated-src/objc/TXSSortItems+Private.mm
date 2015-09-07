@@ -6,6 +6,7 @@
 #import "DJICppWrapperCache+Private.h"
 #import "DJIError.h"
 #import "DJIMarshal+Private.h"
+#import "TXSBufferList+Private.h"
 #import "TXSItemList+Private.h"
 #import "TXSSortItems+Private.h"
 #import "TXSTextboxListener+Private.h"
@@ -44,6 +45,18 @@ static_assert(__has_feature(objc_arc), "Djinni requires ARC to be enabled for th
     try {
         auto r = ::textsort::SortItems::create_with_listener(::djinni_generated::TextboxListener::toCpp(listener));
         return ::djinni_generated::SortItems::fromCpp(r);
+    } DJINNI_TRANSLATE_EXCEPTIONS()
+}
+
++ (void)runSortItems:(nonnull TXSItemList *)items {
+    try {
+        ::textsort::SortItems::run_sort_items(::djinni_generated::ItemList::toCpp(items));
+    } DJINNI_TRANSLATE_EXCEPTIONS()
+}
+
++ (void)runSortBuffers:(nonnull TXSBufferList *)items {
+    try {
+        ::textsort::SortItems::run_sort_buffers(::djinni_generated::BufferList::toCpp(items));
     } DJINNI_TRANSLATE_EXCEPTIONS()
 }
 

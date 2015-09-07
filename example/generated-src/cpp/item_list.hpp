@@ -9,6 +9,7 @@
 
 namespace textsort {
 
+/** Our demo will sort this list of strings */
 struct ItemList final {
     std::vector<std::string> items;
 

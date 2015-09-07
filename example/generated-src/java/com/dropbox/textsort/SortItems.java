@@ -8,10 +8,16 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 public abstract class SortItems {
+    /** Interface for iOS / Android demo */
     public abstract void sort(@Nonnull SortOrder order, @Nonnull ItemList items);
 
     @CheckForNull
     public static native SortItems createWithListener(@CheckForNull TextboxListener listener);
+
+    /** Interface for localhost demo */
+    public static native void runSortItems(@Nonnull ItemList items);
+
+    public static native void runSortBuffers(@Nonnull BufferList items);
 
     private static final class CppProxy extends SortItems
     {

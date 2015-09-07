@@ -13,11 +13,11 @@ import com.dropbox.djinni.NativeLibLoader;
 
 public class SortTest {
 
-    public static int kNumTests = 100;
+    public static int kNumTests = 10000;
     
-    public static int kStringsPerTest = 1000;
+    public static int kStringsPerTest = 100;
   
-    public static int kStringLength = 1000;
+    public static int kStringLength = 100;
     
     private static SecureRandom random = new SecureRandom();
     
@@ -28,25 +28,30 @@ public class SortTest {
         return new BigInteger(130, random).toString(kStringLength);
     }
     
-    private static class TextboxListenerDummyImpl extends TextboxListener {
-      @Override
-      public void update(ItemList items) { }
-    }
-    
     public static void main(String[] args) throws Exception {  
         NativeLibLoader.loadLibs();
       
+        // Create some random strings to sort below
         ArrayList<String> strs = new ArrayList<String>();
         for (int i = 0; i < kStringsPerTest; ++i) {
             strs.add(randomString());
         }
         
+        
+        /*
+         * The microbenchmark below:
+         *  * Allocates a new array of strings and deep-copies all test strings
+         *  * Sorts them in-place
+         * We explicitly deep copy strings in order to make results more
+         * comparable with the tests below.
+         */
+        log.log(Level.INFO, "\n\n");
         log.log(Level.INFO, "Running java sort test ...");
         Instant startJava = Instant.now();
         for (int i = 0; i < kNumTests; ++i) {
             ArrayList<String> temp = new ArrayList<String>();
             for (String s : strs) {
-              temp.add(new String(s));
+              temp.add(s + ""); // Force allocation
             }
             Collections.sort(temp);
         }
@@ -54,18 +59,51 @@ public class SortTest {
         log.log(
             Level.INFO,
             "... done in " + Duration.between(startJava, endJava) + ".");
-      
-        SortItems sortItemsInterface = 
-            SortItems.createWithListener(new TextboxListenerDummyImpl());
-        log.log(Level.INFO, "Running native sort test ...");
-        Instant startNative = Instant.now();
+        log.log(Level.INFO, "\n\n");
+        
+        /*
+         * Now we run a microbenchmark similar to the one above, but using
+         * STL's std::sort().  The below test:
+         *  * Allocates a new temp std::vector of strings
+         *  * Deep copies Java String data to std::string data.  This
+         *     translation is expensive (!!) and dominates runtime.
+         *  * Sorts the temp vector in-place.
+         */
+        log.log(Level.INFO, "Running native string sort test ...");
+        Instant startNativeStr = Instant.now();
         for (int i = 0; i < kNumTests; ++i) {
-            sortItemsInterface.sort(SortOrder.DESCENDING, new ItemList(strs));
+            SortItems.runSortItems(new ItemList(strs));
         }
-        Instant endNative = Instant.now();
+        Instant endNativeStr = Instant.now();
         log.log(
             Level.INFO,
-            "... done in " + Duration.between(startNative, endNative) + ".");
+            "... done in " +
+                Duration.between(startNativeStr, endNativeStr) + ".");
+        log.log(Level.INFO, "\n\n");
+        
+        /*
+         * Now we run a microbenchmark similar to the one above, but 
+         * we'll sort on String buffer data directly to avoid the
+         * translation cost; the OS can do a fast memcpy. The below test:
+         *  * Allocates a new std::vector of vector-buffers
+         *  * Deep copies Java String data to the vector-buffers.  Since
+         *      no transformation is done, this step is fast.
+         *  * Sorts the temp vector in-place.
+         */
+        log.log(Level.INFO, "Running native buffer sort test ...");
+        Instant startNativeBuf = Instant.now();
+        for (int i = 0; i < kNumTests; ++i) {
+            ArrayList<byte[]> bs = new ArrayList<byte[]>(); 
+            for (String s : strs) {
+                bs.add(s.getBytes());
+            }
+            SortItems.runSortBuffers(new BufferList(bs));
+        }
+        Instant endNativeBuf = Instant.now();
+        log.log(
+            Level.INFO,
+            "... done in " +
+                Duration.between(startNativeBuf, endNativeBuf) + ".");
     }
 
 }

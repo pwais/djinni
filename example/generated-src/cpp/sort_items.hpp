@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "buffer_list.hpp"
 #include "item_list.hpp"
 #include "sort_order.hpp"
 #include <memory>
@@ -15,9 +16,15 @@ class SortItems {
 public:
     virtual ~SortItems() {}
 
+    /** Interface for iOS / Android demo */
     virtual void sort(sort_order order, const ItemList & items) = 0;
 
     static std::shared_ptr<SortItems> create_with_listener(const std::shared_ptr<TextboxListener> & listener);
+
+    /** Interface for localhost demo */
+    static void run_sort_items(const ItemList & items);
+
+    static void run_sort_buffers(const BufferList & items);
 };
 
 }  // namespace textsort
