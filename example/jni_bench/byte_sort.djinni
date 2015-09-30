@@ -1,0 +1,20 @@
+@extern "byte_buffers.yaml"
+
+buffer_view = record {
+  base_address: i64;
+  size: i64;
+}
+
+refcounted_buffer = interface +c +j {
+  reset();
+  accept(buf: jheapbuffer);
+}
+
+byte_sort = interface +c {
+  static sort_in_place(view: buffer_view);
+  
+  static consume_and_print_sorted(buf: refcounted_buffer);
+
+  static gen_buffer(size: i64): refcounted_buffer;
+}
+
