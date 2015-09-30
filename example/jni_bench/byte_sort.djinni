@@ -7,7 +7,7 @@ buffer_view = record {
 
 refcounted_buffer = interface +c +j {
   reset();
-  accept(buf: jheapbuffer);
+  accept(buf: jheaparray);
 }
 
 byte_sort = interface +c {
