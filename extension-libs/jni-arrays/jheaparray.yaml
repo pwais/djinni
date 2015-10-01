@@ -6,7 +6,7 @@ params: []
 prefix: ''
 cpp:
   typename: '::djinnix::JHeapArray'
-  header: '"djinnix/bytes/JHeapArray.hpp"'
+  header: '"djinnix/JHeapArray.hpp"'
   byValue: true
 java:
   typename: 'byte[]'
