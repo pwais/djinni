@@ -15,13 +15,14 @@ while [ -h "$loc" ]; do
 done
 base_dir=$(cd "`dirname "$loc"`" && pwd)
 
-temp_out="$base_dir/djinni-output-temp"
+temp_out="$base_dir/.djinni-output-temp"
 
-in="$base_dir/byte_sort.djinni"
+in="$base_dir/arrays.djinni"
 
 cpp_out="$base_dir/generated-src/cpp"
 jni_out="$base_dir/generated-src/jni"
 java_out="$base_dir/generated-src/java/com/dropbox/bytesort"
+djinni_out="$base_dir/generated-src/djinni"
 
 java_package="com.dropbox.bytesort"
 
@@ -36,7 +37,7 @@ elif [ $# -eq 1 ]; then
         echo "Unexpected argument: \"$command\"." 1>&2
         exit 1
     fi
-    for dir in "$temp_out" "$cpp_out" "$jni_out" "$java_out"; do
+    for dir in "$temp_out" "$cpp_out" "$jni_out" "$java_out" "$djinni_out"; do
         if [ -e "$dir" ]; then
             echo "Deleting \"$dir\"..."
             rm -r "$dir"
@@ -60,6 +61,8 @@ fi
     --cpp-namespace bytesort \
     \
     --jni-out "$temp_out/jni" \
+	\
+	--yaml-out "$temp_out/djinni" \
     \
     --idl "$in"
 
@@ -77,6 +80,7 @@ echo "Copying generated code to final directories..."
 mirror "cpp" "$temp_out/cpp" "$cpp_out"
 mirror "java" "$temp_out/java" "$java_out"
 mirror "jni" "$temp_out/jni" "$jni_out"
+mirror "djinni" "$temp_out/djinni" "$djinni_out"
 
 date > "$gen_stamp"
 

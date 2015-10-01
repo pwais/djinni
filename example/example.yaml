@@ -67,5 +67,6 @@ jni:
   # The type used for representations in JNI (jobject, jint, jbyteArray, etc)
   typename: jobject
   # The mangled type signature of your type to be found by JNI.
-  # See the JNI docs for its format
+  # See the JNI docs for its format, e.g.:
+  # http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html#wp9502
   typeSignature: 'Lcom/example/mylib/Record1;'

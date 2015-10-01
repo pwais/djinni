@@ -9,8 +9,8 @@ support/*.target.mk
 *.target.mk
 GypAndroid.mk
 
-# gyp
-deps/gyp
+# deps
+deps/
 
 # android build artifacts
 libs/

@@ -1,0 +1,23 @@
+# TODO docs
+---
+name: jheaparray
+typedef: 'record'
+params: []
+prefix: ''
+cpp:
+  typename: '::djinnix::JHeapArray'
+  header: '"djinnix/bytes/JHeapArray.hpp"'
+  byValue: true
+java:
+  typename: 'byte[]'
+  boxed: 'Byte[]'
+  reference: false
+  generic: false
+  hash: '%s.hashCode()'
+jni:
+  translator: '::djinnix::jni::JHeapArrayTranslator'
+  header: 'djinnix/jni/JHeapArrayTranslator.hpp"'
+  typename: jbyteArray
+  typeSignature: '[B'
+# TODO: perhaps support for other primitive arrays: http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html#wp9502
+

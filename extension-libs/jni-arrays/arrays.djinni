@@ -1,0 +1,18 @@
+@extern "jheaparray.yaml"
+
+jnative_array = record {
+  base_address: i64;
+  size: i64;
+}
+
+# TODO: flesh out disposer and shared interface
+# shared_array = interface +c +j {
+#   static create_on_heap(size: i64): shared_array;
+#   static create_direct(size: i64): shared_array;
+#
+#   void wrap(
+# }
+disposer = interface +c +j {
+  dispose();
+}
+

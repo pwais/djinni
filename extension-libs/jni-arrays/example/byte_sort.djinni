@@ -1,9 +1,5 @@
-@extern "byte_buffers.yaml"
-
-buffer_view = record {
-  base_address: i64;
-  size: i64;
-}
+@extern "../byte_buffers.yaml"
+@import "../jnativearray.djinni"
 
 refcounted_buffer = interface +c +j {
   reset();
