@@ -28,6 +28,8 @@ namespace djinnix {
 class CriticalArr;
 class JHeapArray;
 
+namespace jni { struct JHeapArrayTranslator; } /* namespace jni */
+
 /*
  * Wraps a `byte[]` on the JVM's managed heap and provides read/write
  * access.  This class aims to abstract away JNI complexities and provide
@@ -43,14 +45,14 @@ class JHeapArray;
 class JHeapArray final {
 public:
 
-  JHeapArray() : jarr_(nullptr) { }
-
   inline bool empty() noexcept const { return jarr_ == nullptr; }
 
   // Create and return a readable, *critical* reference to the wrapped `byte[]`
   inline CriticalArr getCritical() const {
     return CriticalArr::createCritical(jarr_.get());
   }
+
+  // TODO: non-critical access and a straight up fast copy might be nice.
 
   // Have the JVM allocate a `byte[]` of `size` and return a JHeapArray
   // wrapping the created array.
@@ -79,6 +81,8 @@ public:
 protected:
   friend class ::djinnix::jni::JHeapArrayTranslator;
 
+  JHeapArray() : jarr_(nullptr) { }
+
   // Wrap the existing `jarr` (a `byte[]`) on the JVM heap and return
   // the created wrapper.
   inline static JHeapArray wrap(JNIEnv *jniEnv, jbyteArray jarr) {
@@ -88,8 +92,8 @@ protected:
     return ha;
   }
 
-  inline LocalRef<jbyteArray> createLocalRef(JNIEnv *jniEnv) {
-    return LocalRef<jbyteArray>(jniEnv, jarr_.get());
+  inline djinni::LocalRef<jbyteArray> createLocalRef(JNIEnv *jniEnv) const {
+    return djinni::LocalRef<jbyteArray>(jniEnv, jarr_.get());
   }
 
 private:
@@ -251,58 +255,37 @@ private:
 
 
 
+namespace jni {
 
+// djinni type translator for JHeapArray
+struct JHeapArrayTranslator {
+  using CppType = JHeapArray;
+  using JniType = jbyteArray;
 
-/**
- *
- * Do this:
- *  * make JHeapArray like a unique_ptr but with a size. dtor calls release critical
- *  * cpp => java ... this would be something like creating the JHeapArray does JNI
- *     calls to alloc an array, then we save the jbyteArray handle .. question
- *     is do we need to create a global/local ref so that the GC doesnt collect
- *     it immediately
- */
-class JHeapArray final {
-public:
+  struct Boxed {
+    using JniType = jobjectArray;
+    static CppType toCpp(JNIEnv* jniEnv, JniType j) {
+      assert(false); // TODO
+      return JHeapArray();
+    }
 
+    static LocalRef<JniType> fromCpp(JNIEnv* jniEnv, CppType c) {
+      assert(false); // TODO
+      return nullptr;
+    }
+  };
 
-  /**
-   * Notes:
-   *  * Must be invoked from a Java-created thread
-   *  * `consume` should not throw (TODO do we need noexcept?)
-   *  * Some JVMs deterministically do not copy, e.g. OpenJDK/Hotspot.
-   */
-  template <typename CallableT>
-  inline
-  bool UseCritical(CallableT consume) {
-    if (!(jniEnv_ && jarrh_)) { return false; }
-
-    size_t size = jniEnv->GetArrayLength(jarrh_);
-    if (size == 0) { return false; }
-
-
+  static CppType toCpp(JNIEnv* jniEnv, JniType jarr) {
+    return JHeapArray::wrap(jniEnv, jarr);
   }
 
-  JHeapArray() : jniEnv_(nullptr), jarrh_(nullptr) { }
-
-
-
-  // Default moves and copies are permissible because
-  JHeapArray(const JHeapArray &) = default;
-  JHeapArray &operator=(const JHeapArray &) = default;
-  JHeapArray(JHeapArray &&other) = default;
-  JHeapArray &operator=(JHeapArray &&other) = default;
-
-
-private:
-
-  // we need global refs!
-  JNIEnv /* weak */ * jniEnv_;
-  jbyteArray jarrh_; // A (weak) pointer
-
+  static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
+    return c.createLocalRef(jniEnv);
+  }
 };
 
 } /* namespace jni */ 
+
 } /* namespace djinnix */
 
 #endif /* DJINNIX_JNI_JHEAPARRAY_ */

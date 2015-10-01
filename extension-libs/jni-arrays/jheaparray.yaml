@@ -16,7 +16,7 @@ java:
   hash: '%s.hashCode()'
 jni:
   translator: '::djinnix::jni::JHeapArrayTranslator'
-  header: 'djinnix/jni/JHeapArrayTranslator.hpp"'
+  header: '"djinnix/JHeapArray.hpp"'
   typename: jbyteArray
   typeSignature: '[B'
 # TODO: perhaps support for other primitive arrays: http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html#wp9502
