@@ -17,14 +17,14 @@ base_dir=$(cd "`dirname "$loc"`" && pwd)
 
 temp_out="$base_dir/.djinni-output-temp"
 
-in="$base_dir/src/djinni/arrays.djinni"
+in="$base_dir/djinni/all_tests.djinni"
 
 cpp_out="$base_dir/generated-src/cpp"
 jni_out="$base_dir/generated-src/jni"
-java_out="$base_dir/generated-src/java/com/dropbox/djinnix"
+java_out="$base_dir/generated-src/java/com/dropbox/djinnix/test"
 djinni_out="$base_dir/generated-src/djinni"
 
-java_package="com.dropbox.djinnix"
+java_package="com.dropbox.djinnix.test"
 
 gen_stamp="$temp_out/gen.stamp"
 
@@ -47,7 +47,7 @@ elif [ $# -eq 1 ]; then
 fi
 
 # Build djinni
-"$base_dir/../../src/build"
+"$base_dir/../../../src/build"
 
 [ ! -e "$temp_out" ] || rm -r "$temp_out"
 "$base_dir/../../src/run-assume-built" \
@@ -58,7 +58,7 @@ fi
     --ident-java-field mFooBar \
     \
     --cpp-out "$temp_out/cpp" \
-    --cpp-namespace djinnix \
+    --cpp-namespace djinnix_test \
     \
     --jni-out "$temp_out/jni" \
 	\
