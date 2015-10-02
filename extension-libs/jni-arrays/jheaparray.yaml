@@ -15,7 +15,7 @@ java:
   generic: false
   hash: '%s.hashCode()'
 jni:
-  translator: '::djinnix::jni::JHeapArrayTranslator'
+  translator: '::djinnix::JHeapArrayTranslator'
   header: '"djinnix/JHeapArray.hpp"'
   typename: jbyteArray
   typeSignature: '[B'

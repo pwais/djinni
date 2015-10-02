@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef DJINNIX_JNI_JHEAPARRAY_
-#define DJINNIX_JNI_JHEAPARRAY_
+#ifndef DJINNIX_JHEAPARRAY_
+#define DJINNIX_JHEAPARRAY_
 
 #pragma once
 
@@ -25,7 +25,7 @@
 
 namespace djinnix {
 
-class CriticalArr;
+class CriticalArray;
 class JHeapArray;
 
 namespace jni { struct JHeapArrayTranslator; } /* namespace jni */
@@ -48,8 +48,8 @@ public:
   inline bool empty() noexcept const { return jarr_ == nullptr; }
 
   // Create and return a readable, *critical* reference to the wrapped `byte[]`
-  inline CriticalArr getCritical() const {
-    return CriticalArr::createCritical(jarr_.get());
+  inline CriticalArray getCritical() const {
+    return CriticalArray::createCritical(jarr_.get());
   }
 
   // TODO: non-critical access and a straight up fast copy might be nice.
@@ -106,7 +106,7 @@ private:
  * A *critical* array backed with data from a Java byte[], where
  * the reference is critical because it may block Java GC.
  */
-class CriticalArr final {
+class CriticalArray final {
 public:
 
   ///
@@ -166,7 +166,7 @@ public:
 
   // Forcibly release the underlying critical handle on the reference `byte[]`.
   // Useful if you want to, for example, unblock the JVM GC before this
-  // CriticalArr instance expires.
+  // CriticalArray instance expires.
   inline void release() {
     if (!empty()) {
       JNIEnv * jniEnv = djinni::jniGetThreadEnv();
@@ -184,10 +184,10 @@ public:
 
 
   // Only movable
-  CriticalArr(const CriticalArr &) = delete;
-  CriticalArr &operator=(const CriticalArr &) = delete;
+  CriticalArray(const CriticalArray &) = delete;
+  CriticalArray &operator=(const CriticalArray &) = delete;
 
-  inline CriticalArr(CriticalArr &&other)
+  inline CriticalArray(CriticalArray &&other)
     : data_(other.data_),
       size_(other.size_),
       writeable_(other.writeable_),
@@ -199,7 +199,7 @@ public:
     other.jarr_ = nullptr;
   }
 
-  inline CriticalArr &operator=(CriticalArr &&other) {
+  inline CriticalArray &operator=(CriticalArray &&other) {
     if (!empty() && jarr_ != other.jarr_) {
       release();
     }
@@ -212,15 +212,15 @@ public:
     return *this;
   }
 
+  ~CriticalArray() { release(); }
+
 protected:
   friend class JHeapArray;
 
-  CriticalArr() : data_(nullptr), size_(0), writeable_(false), jarr_(nullptr) { }
+  CriticalArray() : data_(nullptr), size_(0), writeable_(false), jarr_(nullptr) { }
 
-  ~CriticalArr() { release(); }
-
-  static CriticalArr createCritical(jbyteArray *jarr) {
-    CriticalArr arr;
+  static CriticalArray createCritical(jbyteArray *jarr) {
+    CriticalArray arr;
 
     if (!jarr_) { return arr; }
 
@@ -284,9 +284,8 @@ struct JHeapArrayTranslator {
   }
 };
 
-} /* namespace jni */ 
-
+} /* namespace jni */
 } /* namespace djinnix */
 
-#endif /* DJINNIX_JNI_JHEAPARRAY_ */
+#endif /* DJINNIX_JHEAPARRAY_ */
 

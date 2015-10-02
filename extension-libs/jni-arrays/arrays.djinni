@@ -1,5 +1,7 @@
 @extern "jheaparray.yaml"
+@extern "jdirectarray.yaml"
 
+# TODO: removeme
 jnative_array = record {
   base_address: i64;
   size: i64;
