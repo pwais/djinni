@@ -62,26 +62,26 @@ install(
 ## Test Shared Library
 ##
 
-set(test_include_dirs generated-src/jni/ generated-src/cpp/ src/cpp/ test/cpp/)
-
-file(
-  GLOB_RECURSE test_srcs
-  test/cpp/*.cpp
-  test/generated-src/jni/*.cpp
-  test/generated-src/cpp/*.cpp)
-
-set(test_lib_srcs ${support_srcs} ${arrays_srcs} ${test_srcs})
-
-add_library(DjinniXJNIArraysTest SHARED ${test_lib_srcs})
-include_directories(
-  DjinniXJNIArraysTest
-  ${arrays_include_dirs}
-  ${test_include_dirs}
-  ${support_dir}
-  ${JNI_INCLUDE_DIRS})
-target_link_libraries(DjinniXJNIArraysTest DjinniXJNIArrays ${JNI_LIBRARIES})
-install(
-  TARGETS DjinniXJNIArraysTest
-  ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
-  LIBRARY DESTINATION "${LIB_INSTALL_DIR}")
+#set(test_include_dirs generated-src/jni/ generated-src/cpp/ src/cpp/ test/cpp/)
+#
+#file(
+#  GLOB_RECURSE test_srcs
+#  test/cpp/*.cpp
+#  test/generated-src/jni/*.cpp
+#  test/generated-src/cpp/*.cpp)
+#
+#set(test_lib_srcs ${support_srcs} ${arrays_srcs} ${test_srcs})
+#
+#add_library(DjinniXJNIArraysTest SHARED ${test_lib_srcs})
+#include_directories(
+#  DjinniXJNIArraysTest
+#  ${arrays_include_dirs}
+#  ${test_include_dirs}
+#  ${support_dir}
+#  ${JNI_INCLUDE_DIRS})
+#target_link_libraries(DjinniXJNIArraysTest DjinniXJNIArrays ${JNI_LIBRARIES})
+#install(
+#  TARGETS DjinniXJNIArraysTest
+#  ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
+#  LIBRARY DESTINATION "${LIB_INSTALL_DIR}")
 
