@@ -1,2 +1,5 @@
 .djinni-output-temp/
 generated-src/
+test/generated-src/
+test/.djinni-output-temp/
+build/

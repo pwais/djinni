@@ -1,5 +1,14 @@
-@import "arrays.djinni"
+@extern "../../src/djinni/jdirectarray.yaml"
+@extern "../../src/djinni/jheaparray.yaml"
 
+#TODO
+#record_with_jheaparray_and_derivings = record {
+#  a: jheaparray;
+#} deriving(eq, ord)
+#record_with_jdirectarray_and_derivings = record {
+#  da: jdirectarray;
+#} deriving(eq, ord)
+# TODO write tests
 test_heap_array = interface + c {
   static check_null_array(a: jheaparray): bool;
   static check_array_contents(a: jheaparray, expected: binary): bool;
@@ -9,12 +18,4 @@ test_direct_array = interface + c {
   static check_null_direct_array(da: jdirectarray): bool;
   static check_direct_bb_array_contents(da: jdirectarray, expected: binary): bool;
 }
-
-record_with_jheaparray_and_derivings = record {
-  a: jheaparray;
-} deriving(eq, ord)
-
-record_with_jdirectarray_and_derivings = record {
-  da: jdirectarray;
-} deriving(eq, ord)
 

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef DJINNIX_JHEAPARRAY_
-#define DJINNIX_JHEAPARRAY_
+#ifndef DJINNIX_JHEAPARRAY_HPP_
+#define DJINNIX_JHEAPARRAY_HPP_
 
 #pragma once
 
@@ -287,5 +287,5 @@ struct JHeapArrayTranslator {
 } /* namespace jni */
 } /* namespace djinnix */
 
-#endif /* DJINNIX_JHEAPARRAY_ */
+#endif /* DJINNIX_JHEAPARRAY_HPP_ */
 

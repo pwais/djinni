@@ -50,7 +50,7 @@ fi
 "$base_dir/../../../src/build"
 
 [ ! -e "$temp_out" ] || rm -r "$temp_out"
-"$base_dir/../../src/run-assume-built" \
+"$base_dir/../../../src/run-assume-built" \
     --java-out "$temp_out/java" \
     --java-package $java_package \
     --java-nullable-annotation "javax.annotation.CheckForNull" \

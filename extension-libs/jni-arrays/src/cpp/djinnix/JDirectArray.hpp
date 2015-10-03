@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef DJINNIX_JDIRECTARRAY_
-#define DJINNIX_JDIRECTARRAY_
+#ifndef DJINNIX_JDIRECTARRAY_HPP_
+#define DJINNIX_JDIRECTARRAY_HPP_
 
 #pragma once
 
@@ -197,5 +197,5 @@ struct JDirectArrayTranslator {
 } /* namespace jni */
 } /* namespace djinnix */
 
-#endif /* DJINNIX_JDIRECTARRAY_ */
+#endif /* DJINNIX_JDIRECTARRAY_HPP_ */
 
