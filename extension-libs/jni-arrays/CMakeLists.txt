@@ -7,6 +7,9 @@ project(djinnix-jni-arrays C CXX)
 
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib"
   CACHE PATH "Installation directory for libraries (default: prefix/lib).")
+set(INSTALL_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include"
+  CACHE PATH
+  "Installation directory for header files (default: prefix/include).")
 
 ##
 ## Global Dependencies
@@ -24,8 +27,13 @@ endif()
 ## JNI-Arrays Shared Library
 ##
 
+#TODO: make header-only! make interface library.  find djinni and find jni-arrays ?
 set(support_dir ../../support-lib/jni)
-set(arrays_include_dirs generated-src/jni/ generated-src/cpp/ src/cpp/)
+set(
+  arrays_include_dirs
+  build/generated-src/jni/ 
+  build/generated-src/cpp/
+  src/cpp/)
 
 file(
   GLOB_RECURSE support_srcs
@@ -33,8 +41,8 @@ file(
 
 file(
   GLOB_RECURSE arrays_srcs
-  generated-src/jni/*.cpp
-  generated-src/cpp/*.cpp
+  build/generated-src/jni/*.cpp
+  build/generated-src/cpp/*.cpp
   src/cpp/*.cpp)
 
 set(arrays_common_flags "-g -Wall -Werror -std=c++1y")
@@ -57,6 +65,10 @@ install(
   TARGETS DjinniXJNIArrays
   ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
   LIBRARY DESTINATION "${LIB_INSTALL_DIR}")
+install(
+  DIRECTORY ${arrays_include_dirs}
+  DESTINATION "${INSTALL_INCLUDE_DIR}"
+  FILES_MATCHING PATTERN "*.hpp")
 
 ##
 ## Test Shared Library

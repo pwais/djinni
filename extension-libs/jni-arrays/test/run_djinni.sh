@@ -15,14 +15,14 @@ while [ -h "$loc" ]; do
 done
 base_dir=$(cd "`dirname "$loc"`" && pwd)
 
-temp_out="$base_dir/.djinni-output-temp"
+temp_out="$base_dir/build/.djinni-output-temp"
 
 in="$base_dir/djinni/all_tests.djinni"
 
-cpp_out="$base_dir/generated-src/cpp"
-jni_out="$base_dir/generated-src/jni"
-java_out="$base_dir/generated-src/java/com/dropbox/djinnix/test"
-djinni_out="$base_dir/generated-src/djinni"
+cpp_out="$base_dir/build/generated-src/cpp"
+jni_out="$base_dir/build/generated-src/jni"
+java_out="$base_dir/build/generated-src/java/com/dropbox/djinnix/test"
+djinni_out="$base_dir/build/generated-src/djinni"
 
 java_package="com.dropbox.djinnix.test"
 

@@ -15,14 +15,14 @@ while [ -h "$loc" ]; do
 done
 base_dir=$(cd "`dirname "$loc"`" && pwd)
 
-temp_out="$base_dir/.djinni-output-temp"
+temp_out="$base_dir/build/.djinni-output-temp"
 
 in="$base_dir/src/djinni/arrays.djinni"
 
-cpp_out="$base_dir/generated-src/cpp"
-jni_out="$base_dir/generated-src/jni"
-java_out="$base_dir/generated-src/java/com/dropbox/djinnix"
-djinni_out="$base_dir/generated-src/djinni"
+cpp_out="$base_dir/build/generated-src/cpp"
+jni_out="$base_dir/build/generated-src/jni"
+java_out="$base_dir/build/generated-src/java/com/dropbox/djinnix"
+djinni_out="$base_dir/build/generated-src/djinni"
 
 java_package="com.dropbox.djinnix"
 
@@ -59,6 +59,7 @@ fi
     \
     --cpp-out "$temp_out/cpp" \
     --cpp-namespace djinnix \
+	--ident-cpp-file DJinnixGenFooBar \
     \
     --jni-out "$temp_out/jni" \
     --ident-jni-class NativeFooBar \

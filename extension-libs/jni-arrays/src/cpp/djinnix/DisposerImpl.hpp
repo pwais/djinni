@@ -14,12 +14,31 @@
 // limitations under the License.
 //
 
-#include "disposer_impl.hpp"
+#ifndef DJINNIX_DISPOSER_IMPL_HPP_
+#define DJINNIX_DISPOSER_IMPL_HPP_
+
+#pragma once
+
+#include <functional>
+
+#include "DjinnixGenDisposer.hpp"
 
 namespace djinnix {
 
-void DisposerImpl::dispose() {
-  f_();
-}
+class DisposerImpl : public Disposer {
+public:
+  DisposerImpl() { }
+  virtual ~DisposerImpl() { }
+
+  virtual void dispose() override {
+    f_();
+  }
+
+private:
+  std::function<void()> f_;
+
+};
 
 } /* namespace djinnix */
+
+#endif /* DJINNIX_DISPOSER_IMPL_HPP_ */
