@@ -200,15 +200,19 @@ public:
   }
 
   inline CriticalArray &operator=(CriticalArray &&other) {
-    if (!empty() && jarr_ != other.jarr_) {
-      release();
+    if (jarr_ == other.jarr_) {
+      // Don't let `other` release() our data
+      other.data_ = nullptr;
+      other.size_ = 0;
+      other.writeable_ = false;
+      other.jarr_ = nullptr;
+    } else {
+      if (!empty()) { release(); }
+      std::swap(data_, other.data_);
+      std::swap(size_, other.size_);
+      std::swap(writeable_, other.writeable_);
+      std::swap(jarr_, other.jarr_);
     }
-
-    std::swap(data_, other.data_);
-    std::swap(size_, other.size_);
-    std::swap(writeable_, other.writeable_);
-    std::swap(jarr_, other.jarr_);
-
     return *this;
   }
 

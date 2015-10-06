@@ -27,7 +27,6 @@ endif()
 ## JNI-Arrays Shared Library
 ##
 
-#TODO: make header-only! make interface library.  find djinni and find jni-arrays ?
 set(support_dir ../../support-lib/jni)
 set(
   arrays_include_dirs
@@ -69,6 +68,8 @@ install(
   DIRECTORY ${arrays_include_dirs}
   DESTINATION "${INSTALL_INCLUDE_DIR}"
   FILES_MATCHING PATTERN "*.hpp")
+
+#add_subdirectory(test)
 
 ##
 ## Test Shared Library

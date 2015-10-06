@@ -61,8 +61,8 @@ fi
     --cpp-namespace djinnix_test \
     \
     --jni-out "$temp_out/jni" \
+	--ident-jni-file NativeFooBar \
     --ident-jni-class NativeFooBar \
-    --ident-jni-file NativeFooBar \ 
     \
     --yaml-out "$temp_out/djinni" \
     \
