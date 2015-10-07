@@ -20,6 +20,9 @@ obj/
 build/
 build_ios/
 
+# jni build artifacts
+build_jni/
+
 # xcode stuff
 project.xcworkspace
 *.xccheckout

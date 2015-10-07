@@ -1,4 +1,4 @@
-all: djinni example_ios example_android test
+all: djinni example_ios example_android jni_support test
 
 clean:
 	-ndk-build -C example/android/app/ clean
@@ -7,6 +7,7 @@ clean:
 	-rm -rf obj/
 	-rm -rf build/
 	-rm -rf build_ios/
+	-rm -rf build_jni/
 	-rm GypAndroid.mk
 
 # rule to lazily clone gyp
@@ -43,7 +44,14 @@ example_android: GypAndroid.mk
 example_localhost: ./deps/java
 	cd example && make localhost
 
-test: ./deps/java
+jni_support:
+	@echo "Using CMake to build Djinni JNI Support Lib"
+	mkdir -p build_jni/local
+	cd ./build_jni && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/local -DCMAKE_VERBOSE_MAKEFILE=ON ../support-lib
+	cd ./build_jni && make && make install
+	@echo "Djinni JNI Support installed locally to ./build_jni/local"
+
+test: ./deps/java ./build/local/lib
 	make -C test-suite
 
 .PHONY: example_android example_ios example_localhost test djinni clean all
