@@ -37,7 +37,7 @@
         <pathelement path="${basedir}/build/classes"/>
       </classpath>
       <jvmarg value="-Xcheck:jni"/>
-	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/build/local/lib"/>
+	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/build/local/lib:../../build_jni/local/lib"/>
     </java>
   </target>
   <target name="jar">

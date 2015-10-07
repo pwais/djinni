@@ -49,7 +49,7 @@ jni_support:
 	mkdir -p build_jni/local
 	cd ./build_jni && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/local -DCMAKE_VERBOSE_MAKEFILE=ON ../support-lib
 	cd ./build_jni && make && make install
-	@echo "Djinni JNI Support installed locally to ./build_jni/local"
+	@echo "Djinni JNI Support installed locally to `pwd`/build_jni/local"
 
 test: ./deps/java ./build/local/lib
 	make -C test-suite

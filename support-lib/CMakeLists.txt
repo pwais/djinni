@@ -29,7 +29,7 @@ endif()
 ## Core Settings
 ##
 
-set(support_dir ./jni)
+set(support_dir ./)
 set(support_common_flags "-Wall -Werror -std=c++1y")
 
 ##
@@ -42,7 +42,7 @@ set(support_common_flags "-Wall -Werror -std=c++1y")
 if(UNIX OR APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")                                                                                                                               
 endif()
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} ${support_common_flags} -g3 -pg")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} ${support_common_flags} -g3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${support_common_flags} -O3")
 
 file(
@@ -52,7 +52,7 @@ file(
   GLOB_RECURSE support_srcs
   ${support_dir}/*.cpp)
 
-add_library(DjinniJNISupport STATIC ${support_srcs})
+add_library(DjinniJNISupport SHARED ${support_srcs})
 include_directories(
   DjinniJNISupport
   ${support_includes}
@@ -63,7 +63,8 @@ install(
   ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
   LIBRARY DESTINATION "${LIB_INSTALL_DIR}")
 install(
-  DIRECTORY ${support_dir}
+  DIRECTORY ${support_dir} # Copies empty dirs, tolerate that for now
+                           # to accomodate support-lib changes
   DESTINATION "${INCLUDE_INSTALL_DIR}/djinni"
   FILES_MATCHING PATTERN "*.hpp")
 

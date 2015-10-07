@@ -25,7 +25,7 @@
 
 # Djinni requires JNI
 find_package(JNI)
-if (NOT JNI_FOUND)
+if(NOT JNI_FOUND)
   message(
     FATAL_ERROR
     "Could not find JNI. Did you install a JDK? Set $JAVA_HOME to override")
@@ -41,8 +41,8 @@ find_library(DJINNI_SUPPORT_LIB DjinniJNISupport
 set(DJINNI_JNI_LIBRARIES ${DJINNI_SUPPORT_LIB} ${JNI_LIBRARIES})
 
 find_path(DJINNI_JNI_INCLUDE_DIRS djinni_support.hpp
-  HINTS "${PKGCONFIG_DJINNI_JNI_INCLUDEDIR}" ${PKGCONFIG_DJINNI_JNI_INCLUDE_DIRS} ${DJINNI_ROOT}/build_jni/local/include)
-set(DJINNI_JNI_INCLUDE_DIRS ${DJINNI_INCLUDE_DIRS} ${JNI_INCLUDE_DIRS})
+  HINTS "${PKGCONFIG_DJINNI_JNI_INCLUDEDIR}" ${PKGCONFIG_DJINNI_JNI_INCLUDE_DIRS} ${DJINNI_ROOT}/build_jni/local/include/djinni/jni)
+set(DJINNI_JNI_INCLUDE_DIRS ${DJINNI_JNI_INCLUDE_DIRS} ${JNI_INCLUDE_DIRS})
 
 # Unfortunately, we can't reference these from support-lib/CMakeLists.txt$support_common_flags
 set(DJINNI_JNI_DEFINITIONS -std=c++1y)

@@ -233,7 +233,7 @@ private:
 template <class C>
 class JniClass {
 public:
-    static const C & get() {
+    inline static const C & get() {
         (void)s_initializer; // ensure that initializer is actually instantiated
         assert(s_singleton);
         return *s_singleton;
@@ -243,7 +243,7 @@ private:
     static const JniClassInitializer s_initializer;
     static std::unique_ptr<C> s_singleton;
 
-    static void allocate() {
+    inline static void allocate() {
         // We can't use make_unique here, because C will have a private constructor and
         // list JniClass as a friend; so we have to allocate it by hand.
         s_singleton = std::unique_ptr<C>(new C());
