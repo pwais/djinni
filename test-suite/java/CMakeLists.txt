@@ -53,7 +53,8 @@ include_directories(
   ${test_include_dirs}
   ${DJINNI_JNI_INCLUDE_DIRS})
 # WOOF! need to export some link flags ... https://github.com/janelia-flyem/buildem/blob/master/cplex-shared.cmake#L7
-target_link_libraries(DjinniTestNative "-Wl,-all_load" ${DJINNI_JNI_LIBRARIES})
+# "-Wl,-all_load"
+#target_link_libraries(DjinniTestNative ${DJINNI_JNI_LIBRARIES})
 install(
   TARGETS DjinniTestNative
   ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"

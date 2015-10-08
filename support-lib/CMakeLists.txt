@@ -52,7 +52,7 @@ file(
   GLOB_RECURSE support_srcs
   ${support_dir}/*.cpp)
 
-add_library(DjinniJNISupport STATIC ${support_srcs})
+add_library(DjinniJNISupport SHARED ${support_srcs})
 include_directories(
   DjinniJNISupport
   ${support_includes}
