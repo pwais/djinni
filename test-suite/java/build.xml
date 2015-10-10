@@ -36,8 +36,8 @@
         <fileset dir="../../deps/java/test"><include name="*.jar"/></fileset>
         <pathelement path="${basedir}/build/classes"/>
       </classpath>
-      <jvmarg value="-Xcheck:jni"/>
-	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/../../build_jni/local/lib,${basedir}/build/local/lib"/>
+      <jvmarg value="-Xcheck:jni"/><!-- ${basedir}/../../build_jni/local/lib -->
+	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/build/local/lib"/>
     </java>
   </target>
   <target name="jar">

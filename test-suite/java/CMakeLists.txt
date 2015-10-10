@@ -9,18 +9,13 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib"
   CACHE PATH "Installation directory for libraries (default: prefix/lib).")
 
 ##
-## Global Dependencies
+## Dependencies
 ##
 
-set(DJINNI_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../../support-lib/cmake")
-find_package(DjinniJNI REQUIRED)
-if(NOT DJINNI_JNI_FOUND)
-  message(
-    FATAL_ERROR
-	"Could not find Djinni JNI Support.  Did you run `make jni_support` in the root of the repo?")
-endif()
-
+set(djinni_root ../../)
+include(${djinni_root}/support-lib/cmake/DjinniJNI.cmake)
+djinni_jni_export_vars(${djinni_root})
+message("tast" ${DJINNI_JNI_SRCS})
 ##
 ## Test Suite Shared Library
 ##
@@ -41,20 +36,14 @@ file(
 set(test_suite_common_flags "-g -Wall -Werror -std=c++1y")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${test_suite_common_flags} ${DJINNI_JNI_DEFINITIONS}")
-if(UNIX OR APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-endif()
 
 #set(test_lib_srcs ${test_suite_srcs})
 
-add_library(DjinniTestNative SHARED ${test_suite_srcs})
-include_directories(
-  DjinniTestNative
-  ${test_include_dirs}
-  ${DJINNI_JNI_INCLUDE_DIRS})
+add_library(DjinniTestNative SHARED ${test_suite_srcs} ${DJINNI_JNI_SRCS})
+include_directories(DjinniTestNative ${test_include_dirs} ${DJINNI_JNI_INCLUDE_DIRS})
 # WOOF! need to export some link flags ... https://github.com/janelia-flyem/buildem/blob/master/cplex-shared.cmake#L7
 # "-Wl,-all_load"
-#target_link_libraries(DjinniTestNative ${DJINNI_JNI_LIBRARIES})
+target_link_libraries(DjinniTestNative ${DJINNI_JNI_LIBRARIES})
 install(
   TARGETS DjinniTestNative
   ARCHIVE DESTINATION "${LIB_INSTALL_DIR}"
