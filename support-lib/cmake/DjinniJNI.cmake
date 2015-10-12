@@ -17,6 +17,8 @@
 #     Link against these (System JNI) libraries.
 #   DJINNI_JNI_DEFINITIONS
 #     Compiler flags required for building with Djinni.
+#   DJINNI_ROOT
+#     Root of Djinni source tree (i.e. the param given to the funcion)
 #
 # Example usage:
 #   set(djinni_root path/to/djinni/root)
@@ -59,14 +61,18 @@ function(DJINNI_JNI_EXPORT_VARS djinni_root)
   file(
     GLOB_RECURSE DJINNI_JNI_SRCS
     ${djinni_root}/support-lib/*.cpp)
+  
   set(DJINNI_JNI_SRCS ${DJINNI_JNI_SRCS} PARENT_SCOPE)
   
   set(DJINNI_JNI_LIBRARIES ${JNI_LIBRARIES} PARENT_SCOPE)
+
   set(jni_defs "-std=c++1y")
   if(UNIX OR APPLE)
     set(jni_defs "${jni_defs} -fPIC")
   endif()
   set(DJINNI_JNI_DEFINITIONS ${jni_defs} PARENT_SCOPE) # CMake can't set PARENT_SCOPE twice ..
+
+  set(DJINNI_ROOT ${djinni_root} PARENT_SCOPE)
 
 endfunction()
 

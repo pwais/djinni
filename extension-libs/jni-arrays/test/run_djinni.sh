@@ -22,7 +22,6 @@ in="$base_dir/src/djinni/all_tests.djinni"
 cpp_out="$base_dir/build/generated-src/cpp"
 jni_out="$base_dir/build/generated-src/jni"
 java_out="$base_dir/build/generated-src/java/com/dropbox/djinnix/test"
-djinni_out="$base_dir/build/generated-src/djinni"
 
 java_package="com.dropbox.djinnix.test"
 
@@ -37,7 +36,7 @@ elif [ $# -eq 1 ]; then
         echo "Unexpected argument: \"$command\"." 1>&2
         exit 1
     fi
-    for dir in "$temp_out" "$cpp_out" "$jni_out" "$java_out" "$djinni_out"; do
+    for dir in "$temp_out" "$cpp_out" "$jni_out" "$java_out"; do
         if [ -e "$dir" ]; then
             echo "Deleting \"$dir\"..."
             rm -r "$dir"
@@ -80,7 +79,6 @@ echo "Copying generated code to final directories..."
 mirror "cpp" "$temp_out/cpp" "$cpp_out"
 mirror "java" "$temp_out/java" "$java_out"
 mirror "jni" "$temp_out/jni" "$jni_out"
-mirror "djinni" "$temp_out/djinni" "$djinni_out"
 
 date > "$gen_stamp"
 

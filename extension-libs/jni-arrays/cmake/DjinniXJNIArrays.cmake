@@ -10,29 +10,27 @@
 function(DJINNI_JNI_ARRAYS_EXPORT_VARS)
 
   if(NOT DEFINED DJINNI_JNI_INCLUDE_DIRS OR
-     NOT DEFINED DJINNI_JNI_SRCS)
+     NOT DEFINED DJINNI_JNI_SRCS OR
+	 NOT DEFINED DJINNI_ROOT)
      message(SEND_ERROR "Did you run DJINNI_JNI_EXPORT_VARS() ?")
   endif()
 
-  set(arrays_include_dirs
-    build/generated-src/jni/ 
-    build/generated-src/cpp/
-    src/cpp/)
+  set(jni_arrays_root ${DJINNI_ROOT}/extension-libs/jni-arrays/)
 
-  set(DJINNI_JNI_INCLUDE_DIRS
-    ${DJINNI_JNI_INCLUDE_DIRS}
-    ${arrays_include_dirs}
-    PARENT_SCOPE)
+  set(arrays_include_dirs
+    ${jni_arrays_root}/build/generated-src/jni/ 
+    ${jni_arrays_root}/build/generated-src/cpp/
+    ${jni_arrays_root}/src/cpp/)
+
+  list(APPEND DJINNI_JNI_INCLUDE_DIRS ${arrays_include_dirs})
+  set(DJINNI_JNI_INCLUDE_DIRS ${DJINNI_JNI_INCLUDE_DIRS} PARENT_SCOPE)
 
   file(GLOB_RECURSE arrays_srcs
-    build/generated-src/jni/*.cpp
-    build/generated-src/cpp/*.cpp
-    src/cpp/*.cpp) 
+    ${jni_arrays_root}/build/generated-src/jni/*.cpp
+    ${jni_arrays_root}/build/generated-src/cpp/*.cpp
+    ${jni_arrays_root}/src/cpp/*.cpp) 
 
-  set(DJINNI_JNI_SRCS
-    ${DJINNI_JNI_SRCS}
-    ${arrays_srcs}
-    PARENT_SCOPE)
+  set(DJINNI_JNI_SRCS ${DJINNI_JNI_SRCS} ${arrays_srcs} PARENT_SCOPE)
 
 endfunction()
 

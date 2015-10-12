@@ -20,10 +20,10 @@ import java.nio.ByteBuffer;
 
 // TODO: Unsafe support
 // NB: DirectByteBuffer is a private class and is not necessarily a part of all JVMs
-class DirectArray {
+public class DirectArray {
   protected ByteBuffer mDirectByteBuffer = null;
   
-  public bool isEmpty() { return mDirectByteBuffer != null; }
+  public boolean isEmpty() { return mDirectByteBuffer != null; }
   
   ///
   /// Factories
@@ -37,7 +37,7 @@ class DirectArray {
     return da;
   }
   
-  public DirectArray allocate(long size) {
+  public DirectArray allocate(int size) {
     DirectArray da = new DirectArray();
     da.mDirectByteBuffer = ByteBuffer.allocateDirect(size);
     return da;
