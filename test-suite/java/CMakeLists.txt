@@ -15,17 +15,12 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib"
 set(djinni_root ../../)
 include(${djinni_root}/support-lib/cmake/DjinniJNI.cmake)
 djinni_jni_export_vars(${djinni_root})
-message("tast" ${DJINNI_JNI_SRCS})
+
 ##
 ## Test Suite Shared Library
 ##
 
-#set(support_dir ../../support-lib/jni)
 set(test_include_dirs ../generated-src/jni/ ../generated-src/cpp/ ../handwritten-src/cpp/)
-
-#file(
-#  GLOB_RECURSE support_srcs
-#  ${support_dir}/*.cpp)
 
 file(
   GLOB_RECURSE test_suite_srcs
@@ -37,12 +32,8 @@ set(test_suite_common_flags "-g -Wall -Werror -std=c++1y")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${test_suite_common_flags} ${DJINNI_JNI_DEFINITIONS}")
 
-#set(test_lib_srcs ${test_suite_srcs})
-
 add_library(DjinniTestNative SHARED ${test_suite_srcs} ${DJINNI_JNI_SRCS})
 include_directories(DjinniTestNative ${test_include_dirs} ${DJINNI_JNI_INCLUDE_DIRS})
-# WOOF! need to export some link flags ... https://github.com/janelia-flyem/buildem/blob/master/cplex-shared.cmake#L7
-# "-Wl,-all_load"
 target_link_libraries(DjinniTestNative ${DJINNI_JNI_LIBRARIES})
 install(
   TARGETS DjinniTestNative

@@ -8,7 +8,7 @@ objc:
 	cd objc; xcodebuild -sdk iphonesimulator -project DjinniObjcTest.xcodeproj -scheme DjinniObjcTest test
 
 java:
-	cd java && ant compile test
+	cd java && ant compile test jar run-jar
 
 linux:
 	cd ..; ./test-suite/java/docker/run_dockerized_test.sh

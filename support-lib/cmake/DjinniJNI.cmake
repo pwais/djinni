@@ -19,7 +19,10 @@
 #     Compiler flags required for building with Djinni.
 #
 # Example usage:
-#   djinni_jni_export_vars("path/to/djinni/root")
+#   set(djinni_root path/to/djinni/root)
+#   include(${djinni_root}/support-lib/cmake/DjinniJNI.cmake)
+#   djinni_jni_export_vars(${djinni_root})
+#     ...
 #   add_library(MyLib SHARED ${my_srcs} ${DJINNI_JNI_SRCS})
 #   include_directories(MyLib ${my_includes} ${DJINNI_JNI_INCLUDE_DIRS})
 #   set_target_properties(MyLib PROPERTIES COMPILE_FLAGS ${DJINNI_JNI_DEFINITIONS})
@@ -29,10 +32,6 @@
 #
 
 function(DJINNI_JNI_EXPORT_VARS djinni_root)
-  #if (NOT ARGN)
-  #  message(FATAL_ERROR "Please provide a root to the djinni source code")
-#	return()
-#  endif()
 
   if(NOT EXISTS "${djinni_root}" OR NOT IS_DIRECTORY "${djinni_root}")
     message(SEND_ERROR, "Provided DJINNI_ROOT does not exist or is not a directory " ${djinni_root})
