@@ -29,9 +29,9 @@ file(
   ../handwritten-src/cpp/*.cpp)
 
 set(textsort_common_flags "-Wall -Werror -std=c++1y")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${textsort_common_flags} ${DJINNI_JNI_DEFINITIONS}")
 
 add_library(TextSortNative SHARED ${textsort_srcs} ${DJINNI_JNI_SRCS})
+set_target_properties(TextSortNative PROPERTIES COMPILE_FLAGS "${textsort_common_flags} ${DJINNI_JNI_DEFINITIONS}")
 include_directories(TextSortNative ${textsort_include_dirs} ${DJINNI_JNI_INCLUDE_DIRS})
 target_link_libraries(TextSortNative ${DJINNI_JNI_LIBRARIES})
 install(

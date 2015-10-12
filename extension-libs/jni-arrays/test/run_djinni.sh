@@ -17,7 +17,7 @@ base_dir=$(cd "`dirname "$loc"`" && pwd)
 
 temp_out="$base_dir/build/.djinni-output-temp"
 
-in="$base_dir/djinni/all_tests.djinni"
+in="$base_dir/src/djinni/all_tests.djinni"
 
 cpp_out="$base_dir/build/generated-src/cpp"
 jni_out="$base_dir/build/generated-src/jni"
@@ -63,8 +63,6 @@ fi
     --jni-out "$temp_out/jni" \
 	--ident-jni-file NativeFooBar \
     --ident-jni-class NativeFooBar \
-    \
-    --yaml-out "$temp_out/djinni" \
     \
     --idl "$in"
 

@@ -1,5 +1,5 @@
-@extern "../../src/djinni/jdirectarray.yaml"
-@extern "../../src/djinni/jheaparray.yaml"
+@extern "../../../src/djinni/jdirectarray.yaml"
+@extern "../../../src/djinni/jheaparray.yaml"
 
 #TODO
 #record_with_jheaparray_and_derivings = record {

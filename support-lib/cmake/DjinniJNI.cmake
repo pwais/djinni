@@ -1,5 +1,5 @@
 #
-# A macro to help build Djinni JNI support into your library.
+# A function to help build Djinni JNI support into your library.
 #
 #   The Djinni support library includes a small amount of non-header
 #   code as well as (sometimes optional) symbols that a compiled
@@ -34,7 +34,7 @@
 function(DJINNI_JNI_EXPORT_VARS djinni_root)
 
   if(NOT EXISTS "${djinni_root}" OR NOT IS_DIRECTORY "${djinni_root}")
-    message(SEND_ERROR, "Provided DJINNI_ROOT does not exist or is not a directory " ${djinni_root})
+    message(SEND_ERROR "Provided DJINNI_ROOT does not exist or is not a directory " ${djinni_root})
 	return()
   endif()
 
@@ -62,10 +62,11 @@ function(DJINNI_JNI_EXPORT_VARS djinni_root)
   set(DJINNI_JNI_SRCS ${DJINNI_JNI_SRCS} PARENT_SCOPE)
   
   set(DJINNI_JNI_LIBRARIES ${JNI_LIBRARIES} PARENT_SCOPE)
-  set(DJINNI_JNI_DEFINITIONS -std=c++1y PARENT_SCOPE)
+  set(jni_defs "-std=c++1y")
   if(UNIX OR APPLE)
-    set(DJINNI_JNI_DEFINITIONS "${DJINNI_JNI_DEFINITIONS} -fPIC" PARENT_SCOPE)
+    set(jni_defs "${jni_defs} -fPIC")
   endif()
+  set(DJINNI_JNI_DEFINITIONS ${jni_defs} PARENT_SCOPE) # CMake can't set PARENT_SCOPE twice ..
 
 endfunction()
 

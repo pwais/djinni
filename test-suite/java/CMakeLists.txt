@@ -28,11 +28,10 @@ file(
   ../generated-src/cpp/*.cpp
   ../handwritten-src/cpp/*.cpp)
 
-set(test_suite_common_flags "-g -Wall -Werror -std=c++1y")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${test_suite_common_flags} ${DJINNI_JNI_DEFINITIONS}")
+set(test_suite_common_flags "-g -Wall -Werror")
 
 add_library(DjinniTestNative SHARED ${test_suite_srcs} ${DJINNI_JNI_SRCS})
+set_target_properties(DjinniTestNative PROPERTIES COMPILE_FLAGS "${test_suite_common_flags} ${DJINNI_JNI_DEFINITIONS}")
 include_directories(DjinniTestNative ${test_include_dirs} ${DJINNI_JNI_INCLUDE_DIRS})
 target_link_libraries(DjinniTestNative ${DJINNI_JNI_LIBRARIES})
 install(
