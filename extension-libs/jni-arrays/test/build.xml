@@ -42,13 +42,13 @@
   </target>
 
   <target name="test">
-    <java classname="com.dropbox.djinni.test.AllTests" fork="true" failonerror="true">
+    <java classname="com.dropbox.djinnix.test.AllTests" fork="true" failonerror="true">
       <classpath>
-        <fileset dir="../../deps/java/"><include name="*.jar"/></fileset>
-        <fileset dir="../../deps/java/test"><include name="*.jar"/></fileset>
+        <fileset dir="${djinni_root}/deps/java/"><include name="*.jar"/></fileset>
+        <fileset dir="${djinni_root}/deps/java/test"><include name="*.jar"/></fileset>
         <pathelement path="${basedir}/build/classes"/>
       </classpath>
-      <jvmarg value="-Xcheck:jni"/><!-- ${basedir}/../../build_jni/local/lib -->
+      <jvmarg value="-Xcheck:jni"/>
 	  <sysproperty key="djinni.native_libs_dirs" value="${basedir}/build/local/lib"/>
     </java>
   </target>

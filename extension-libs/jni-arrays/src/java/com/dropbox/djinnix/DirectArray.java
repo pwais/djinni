@@ -29,15 +29,15 @@ public class DirectArray {
   /// Factories
   ///
   
-  public DirectArray wrap(ByteBuffer b) {
+  public static DirectArray wrap(ByteBuffer b) {
     DirectArray da = new DirectArray();
-    if (b.isDirect()) {
+    if (b != null && b.isDirect()) {
       da.mDirectByteBuffer = b;
     }
     return da;
   }
   
-  public DirectArray allocate(int size) {
+  public static DirectArray allocate(int size) {
     DirectArray da = new DirectArray();
     da.mDirectByteBuffer = ByteBuffer.allocateDirect(size);
     return da;

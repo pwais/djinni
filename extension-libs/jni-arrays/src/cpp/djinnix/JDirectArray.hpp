@@ -31,12 +31,47 @@ class JDirectArray;
 namespace jni { struct JDirectArrayTranslator; } /* namespace jni */
 
 /*
+ * A (weak) reference to an array backed by off-JVM-heap (i.e. unmanaged) memory.
+ */
+class DirectArrayRef final {
+public:
+
+  // Direct access to underlying data
+  inline void * data() const noexcept { return data_; }
+  inline size_t size() const noexcept { return size_; }
+
+  // Is the array either empty or invalid?
+  inline bool empty() const noexcept { return !(data_ && size_ > 0); }
+
+  // Fully copyable and movable -- not an owning reference
+  DirectArrayRef(const DirectArrayRef &) = default;
+  DirectArrayRef &operator=(const DirectArrayRef &) = default;
+  DirectArrayRef(DirectArrayRef &&other) = default;
+  DirectArrayRef &operator=(DirectArrayRef &&other) = default;
+
+protected:
+  friend class JDirectArray;
+
+  DirectArrayRef() : data_(nullptr), size_(0) { }
+
+  explicit DirectArrayRef(void * data, size_t size)
+    : data_(data), size_(size)
+  { }
+
+private:
+  void *data_;
+  size_t size_;
+};
+
+
+
+/*
  * TODO: docs and support for Unsafe-allocated
  */
 class JDirectArray final {
 public:
 
-  inline bool empty() noexcept const { return jdbb_ == nullptr; }
+  inline bool empty() const noexcept { return jdbb_ == nullptr; }
 
   // Create and return an (unowning) reference to the underlying array
   inline DirectArrayRef getArray() const {
@@ -46,8 +81,8 @@ public:
       JNIEnv * jniEnv = djinni::jniGetThreadEnv();
       DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
 
-      void *addr = jniEnv->GetDirectBufferAddress(*jdbb_);
-      jlong capacity = jniEnv->GetDirectBufferCapacity(*jdbb_);
+      void *addr = jniEnv->GetDirectBufferAddress(jdbb_.get());
+      jlong capacity = jniEnv->GetDirectBufferCapacity(jdbb_.get());
       djinni::jniExceptionCheck(jniEnv);
 
       return DirectArrayRef(addr, capacity);
@@ -83,9 +118,9 @@ public:
   JDirectArray &operator=(JDirectArray &&other) = default;
 
 protected:
-  friend class ::djinnix::jni::JDirectArrayTranslator;
+  friend struct ::djinnix::jni::JDirectArrayTranslator;
 
-  JDirectArray() : jdbb_(nullptr) { }
+  JDirectArray() { }
 
   // Wrap the djinnix.DirectArray instance `j` on the JVM heap
   // and return the created wrapper.
@@ -93,7 +128,7 @@ protected:
     JDirectArray da;
     da.jdbb_ = djinni::GlobalRef<jobject>(jniEnv, j);
       // Don't let the JVM GC this array until the wrapper expires.
-    return ha;
+    return da;
   }
 
   inline djinni::LocalRef<jobject> getDirectByteBufferLocalRef(JNIEnv *jniEnv) const {
@@ -108,42 +143,6 @@ private:
 };
 
 
-
-/*
- * A (weak) reference to an array backed by off-JVM-heap (i.e. unmanaged) memory.
- */
-class DirectArrayRef final {
-public:
-
-  // Direct access to underlying data
-  inline void * data() noexcept const { return data_; }
-  inline size_t size() noexcept const { return size_; }
-
-  // Is the array either empty or invalid?
-  inline bool empty() noexcept const { return !(data_ && size_ > 0); }
-
-  // Fully copyable and movable -- not an owning reference
-  DirectArrayRef(const DirectArrayRef &) = default;
-  DirectArrayRef &operator=(const DirectArrayRef &) = default;
-  DirectArrayRef(DirectArrayRef &&other) = default;
-  DirectArrayRef &operator=(DirectArrayRef &&other) = default;
-
-protected:
-  friend class JDirectArray;
-
-  DirectArrayRef() : data_(nullptr), size_(0) { }
-
-  explicit DirectArrayRef(void * data_, size_t size_)
-    : data(data_), size(size_)
-  { }
-
-private:
-  void *data_;
-  size_t size_;
-};
-
-
-
 namespace jni {
 
 // djinni type translator for JDirectArray
@@ -152,7 +151,7 @@ struct JDirectArrayTranslator {
   using JniType = jobject;
 
   struct DirectArrayInfo {
-    const djinni::GlobalRef<jclass> clazz { jniFindClass("com/dropbox/djinnix/DirectArray") };
+    const djinni::GlobalRef<jclass> clazz { djinni::jniFindClass("com/dropbox/djinnix/DirectArray") };
     const jmethodID method_get_as_direct_byte_buffer {
       djinni::jniGetMethodID(clazz.get(), "getAsDirectByteBuffer", "()Ljava/nio/ByteBuffer;")
     };
@@ -170,7 +169,7 @@ struct JDirectArrayTranslator {
 
     // Does the DirectArray wrap a DirectByteBuffer?
     jobject jdbb = jniEnv->CallObjectMethod(j, data.method_get_as_direct_byte_buffer);
-    jniExceptionCheck(jniEnv);
+    djinni::jniExceptionCheck(jniEnv);
     if (jdbb != NULL) {
       return JDirectArray::wrapDirectByteBuffer(jniEnv, jdbb);
     }
@@ -179,14 +178,14 @@ struct JDirectArrayTranslator {
   }
 
   static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
-    auto dbb_ref = c.getDirectByteBufferLocalRef();
+    auto dbb_ref = c.getDirectByteBufferLocalRef(jniEnv);
     if (dbb_ref) {
       const auto& data = djinni::JniClass<DirectArrayInfo>::get();
       auto j =
-        LocalRef<jobject>(
+        djinni::LocalRef<jobject>(
           jniEnv,
           jniEnv->CallStaticObjectMethod(data.clazz.get(), data.method_wrap_byte_buffer, *dbb_ref));
-      jniExceptionCheck(jniEnv);
+      djinni::jniExceptionCheck(jniEnv);
       return j;
     }
 

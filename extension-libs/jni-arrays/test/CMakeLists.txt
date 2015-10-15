@@ -37,7 +37,7 @@ file(
 
 set(test_flags "-g3 -Wall -Werror")
 
-add_library(DjinniXJNIArraysTest SHARED ${test_lib_srcs} ${DJINNI_JNI_SRCS})
+add_library(DjinniXJNIArraysTest SHARED ${test_srcs} ${DJINNI_JNI_SRCS})
 set_target_properties(DjinniXJNIArraysTest PROPERTIES COMPILE_FLAGS "${test_flags} ${DJINNI_JNI_DEFINITIONS}")
 include_directories(DjinniXJNIArraysTest ${test_include_dirs} ${DJINNI_JNI_INCLUDE_DIRS})
 target_link_libraries(DjinniXJNIArraysTest ${DJINNI_JNI_LIBRARIES})

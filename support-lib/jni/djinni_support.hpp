@@ -67,16 +67,17 @@ template <typename PointerType>
 class GlobalRef : public std::unique_ptr<typename std::remove_pointer<PointerType>::type,
                                          GlobalRefDeleter> {
 public:
-    GlobalRef() {}
-    GlobalRef(GlobalRef && obj)
+    inline GlobalRef() {}
+    inline GlobalRef(GlobalRef && obj)
         : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::GlobalRefDeleter>(
             std::move(obj)
         ) {}
-    GlobalRef(JNIEnv * env, PointerType localRef)
+    inline GlobalRef(JNIEnv * env, PointerType localRef)
         : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::GlobalRefDeleter>(
             static_cast<PointerType>(env->NewGlobalRef(localRef)),
             ::djinni::GlobalRefDeleter{}
         ) {}
+    inline GlobalRef &operator=(GlobalRef && obj) { this->reset(obj.release()); return *this; }
 };
 
 struct LocalRefDeleter { void operator() (jobject localRef) noexcept; };
@@ -85,13 +86,23 @@ template <typename PointerType>
 class LocalRef : public std::unique_ptr<typename std::remove_pointer<PointerType>::type,
                                         LocalRefDeleter> {
 public:
-    LocalRef() {}
-    LocalRef(JNIEnv * /*env*/, PointerType localRef)
+    inline LocalRef() {}
+    inline LocalRef(JNIEnv * /*env*/, PointerType localRef)
         : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::LocalRefDeleter>(
             localRef) {}
-    explicit LocalRef(PointerType localRef)
-        : std::unique_ptr<typename std::remove_pointer<PointerType>::type, LocalRefDeleter>(
+    inline explicit LocalRef(PointerType localRef)
+        : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::LocalRefDeleter>(
             localRef) {}
+	inline LocalRef(LocalRef && obj)
+	    : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::LocalRefDeleter>(
+		    std::move(obj)
+	    ) {}
+    inline LocalRef(std::nullptr_t)
+	    : std::unique_ptr<typename std::remove_pointer<PointerType>::type, ::djinni::LocalRefDeleter>(
+		    nullptr
+	    ) {}
+	inline LocalRef &operator=(LocalRef && obj) { this->reset(obj.release()); return *this; }
+    inline LocalRef &operator=(std::nullptr_t) { this->reset(); return *this; }
     // Allow implicit conversion to PointerType so it can be passed
     // as argument to JNI functions expecting PointerType.
     // All functions creating new local references should return LocalRef instead of PointerType

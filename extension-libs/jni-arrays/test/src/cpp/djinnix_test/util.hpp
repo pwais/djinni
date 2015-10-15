@@ -50,10 +50,10 @@ inline bool ArrayCompare(ActualT &actual, ExpectedT &expected) {
     return true;
   }
 
-  if (array_ref.size() != expected.size()) {
+  if (actual.size() != expected.size()) {
     DJXT_LOG_ERROR(
       "Size mismatch:\n" <<
-      "actual: " << array_ref.size() << "\n" <<
+      "actual: " << actual.size() << "\n" <<
       "expected: " << expected.size());
     return false;
   }
