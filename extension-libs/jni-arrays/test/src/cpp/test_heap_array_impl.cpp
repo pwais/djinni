@@ -26,19 +26,19 @@ bool TestHeapArray::check_null_array(::djinnix::JHeapArray a) {
 
 bool TestHeapArray::check_array_contents(
     ::djinnix::JHeapArray a,
-     const std::vector<uint8_t> &expected) {
+    const std::vector<uint8_t> &expected) {
   
-  if (da.empty() != expected.empty()) {
+  if (a.empty() != expected.empty()) {
     DJXT_LOG_ERROR(
       "JHeapArray empty (not?), but expected is not empty (empty?)\n" <<
-      "actual empty: " << da.empty() << "\n" <<
+      "actual empty: " << a.empty() << "\n" <<
       "expected empty: " << expected.empty());
     return false;
-  } else if (da.empty() && expected.empty()) {
+  } else if (a.empty() && expected.empty()) {
     return true;
   }
   
-  auto array_ref = da.getCritical();
+  auto array_ref = a.getCritical();
   return djinnix_test::ArrayCompare(array_ref, expected);
 }
 

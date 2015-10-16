@@ -156,7 +156,10 @@ struct JDirectArrayTranslator {
       djinni::jniGetMethodID(clazz.get(), "getAsDirectByteBuffer", "()Ljava/nio/ByteBuffer;")
     };
     const jmethodID method_wrap_byte_buffer {
-      djinni::jniGetStaticMethodID(clazz.get(), "wrap", "(Ljava/nio/ByteBuffer;)V")
+      djinni::jniGetStaticMethodID(
+	    clazz.get(),
+		"wrap",
+		"(Ljava/nio/ByteBuffer;)Lcom/dropbox/djinnix/DirectArray;")
     };
   };
 

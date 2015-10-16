@@ -1,4 +1,3 @@
-//
 // Copyright 2014 Dropbox, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -172,7 +171,7 @@ void jniThrowCppFromJavaException(JNIEnv * env, jthrowable java_exception);
 #else
   __attribute__((noreturn))
 #endif
-void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const char * check);
+void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const std::string &check);
 
 #define DJINNI_ASSERT_MSG(check, env, message) \
     do { \
@@ -268,7 +267,8 @@ template <class C>
 std::unique_ptr<C> JniClass<C>::s_singleton;
 
 /*
- * Exception-checking helpers. These will throw if an exception is pending.
+ * Java element-finding helpers.  NB: for help computing JNI `sig`,
+ * see the JDK `javap` executable (typically /usr/bin/javap)
  */
 GlobalRef<jclass> jniFindClass(const char * name);
 jmethodID jniGetStaticMethodID(jclass clazz, const char * name, const char * sig);

@@ -15,7 +15,7 @@ java:
   generic: false
   hash: '%s.hashCode()'
 jni:
-  translator: '::djinnix::JHeapArrayTranslator'
+  translator: '::djinnix::jni::JDirectArrayTranslator'
   header: '"djinnix/JDirectArray.hpp"'
   typename: jobject
   typeSignature: 'Lcom/dropbox/djinnix/DirectArray;'

@@ -148,7 +148,7 @@ bool JavaIdentityEquals::operator() (jobject obj1, jobject obj2) const {
     return res;
 }
 
-void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const char * check) {
+void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const std::string &check) {
     // basename() exists, but is bad (it's allowed to modify its input).
     const char * slash = strrchr(file, '/');
     const char * file_basename = slash ? slash + 1 : file;
@@ -156,9 +156,9 @@ void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const cha
     char buf[256];
 #if (defined _MSC_VER) && (_MSC_VER < 1900)
     // snprintf not implemented on MSVC prior to 2015
-    _snprintf(buf, sizeof buf, "djinni (%s:%d): %s", file_basename, line, check);
+    _snprintf(buf, sizeof buf, "djinni (%s:%d): %s", file_basename, line, check.c_str());
 #else
-    snprintf(buf, sizeof buf, "djinni (%s:%d): %s", file_basename, line, check);
+    snprintf(buf, sizeof buf, "djinni (%s:%d): %s", file_basename, line, check.c_str());
 #endif
 
     const jclass cassert = env->FindClass("java/lang/Error");
@@ -174,14 +174,20 @@ void jniThrowAssertionError(JNIEnv * env, const char * file, int line, const cha
     jniThrowCppFromJavaException(env, e);
 }
 
+#define DJINNI_ASSERT_JNI_FOUND(check, env, message) \
+    do { \
+        const bool check__res = bool(check); \
+        if (!check__res) { \
+            djinni::jniThrowAssertionError(env, __FILE__, __LINE__, message); \
+        } \
+    } while (false)
+
 GlobalRef<jclass> jniFindClass(const char * name) {
     JNIEnv * env = jniGetThreadEnv();
     DJINNI_ASSERT(name, env);
     GlobalRef<jclass> guard(env, env->FindClass(name));
+    DJINNI_ASSERT_JNI_FOUND(guard, env, "FindClass could not find: " + std::string(name));
     jniExceptionCheck(env);
-    if (!guard) {
-        jniThrowAssertionError(env, __FILE__, __LINE__, "FindClass returned null");
-    }
     return guard;
 }
 
@@ -191,10 +197,11 @@ jmethodID jniGetStaticMethodID(jclass clazz, const char * name, const char * sig
     DJINNI_ASSERT(name, env);
     DJINNI_ASSERT(sig, env);
     jmethodID id = env->GetStaticMethodID(clazz, name, sig);
+    DJINNI_ASSERT_JNI_FOUND(
+        id,
+        env,
+        "GetStaticMethodID could not find: " + std::string(name) + " " + std::string(sig));
     jniExceptionCheck(env);
-    if (!id) {
-        jniThrowAssertionError(env, __FILE__, __LINE__, "GetStaticMethodID returned null");
-    }
     return id;
 }
 
@@ -204,10 +211,11 @@ jmethodID jniGetMethodID(jclass clazz, const char * name, const char * sig) {
     DJINNI_ASSERT(name, env);
     DJINNI_ASSERT(sig, env);
     jmethodID id = env->GetMethodID(clazz, name, sig);
-    jniExceptionCheck(env);
-    if (!id) {
-        jniThrowAssertionError(env, __FILE__, __LINE__, "GetMethodID returned null");
-    }
+    DJINNI_ASSERT_JNI_FOUND(
+        id,
+        env,
+        "GetMethodID could not find: " + std::string(name) + " " + std::string(sig));
+    jniExceptionCheck(env);    
     return id;
 }
 
@@ -217,12 +225,15 @@ jfieldID jniGetFieldID(jclass clazz, const char * name, const char * sig) {
     DJINNI_ASSERT(name, env);
     DJINNI_ASSERT(sig, env);
     jfieldID id = env->GetFieldID(clazz, name, sig);
+    DJINNI_ASSERT_JNI_FOUND(
+        id,
+        env,
+        "GetFieldID could not find: " + std::string(name) + " " + std::string(sig)); 
     jniExceptionCheck(env);
-    if (!id) {
-        jniThrowAssertionError(env, __FILE__, __LINE__, "GetFieldID returned null");
-    }
     return id;
 }
+
+#undef DJINNI_ASSERT_JNI_FOUND
 
 JniEnum::JniEnum(const std::string & name)
     : m_clazz { jniFindClass(name.c_str()) },
