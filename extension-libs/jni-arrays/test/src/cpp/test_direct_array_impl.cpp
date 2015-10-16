@@ -21,21 +21,16 @@
 namespace djinnix_test {
 
 bool TestDirectArray::check_null_direct_array(::djinnix::JDirectArray da) {
-  return da.empty();
+  return !da.hasArray();
 }
 
 bool TestDirectArray::check_direct_bb_array_contents(
     ::djinnix::JDirectArray da,
     const std::vector<uint8_t> &expected) {
-  
-  if (da.empty() != expected.empty()) {
-    DJXT_LOG_ERROR(
-      "JDirectArray empty (not?), but expected is not empty (empty?)\n" <<
-      "actual empty: " << da.empty() << "\n" <<
-      "expected empty: " << expected.empty());
-    return false;
-  } else if (da.empty() && expected.empty()) {
-    return true;
+
+  if (!da.hasArray()) {
+    DJXT_LOG_ERROR("JDirectArray does not have a buffer");
+	return false;
   }
   
   auto array_ref = da.getArray();

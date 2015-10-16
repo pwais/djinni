@@ -71,13 +71,11 @@ private:
 class JDirectArray final {
 public:
 
-  inline bool empty() const noexcept { return jdbb_ == nullptr; }
+  inline bool hasArray() const noexcept { return jdbb_ != nullptr; }
 
   // Create and return an (unowning) reference to the underlying array
   inline DirectArrayRef getArray() const {
-    if (empty()) {
-      return DirectArrayRef();
-    } else {
+    if (hasArray()) {
       JNIEnv * jniEnv = djinni::jniGetThreadEnv();
       DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
 
@@ -86,6 +84,8 @@ public:
       djinni::jniExceptionCheck(jniEnv);
 
       return DirectArrayRef(addr, capacity);
+    } else {
+      return DirectArrayRef();
     }
     // TODO: branch for Unsafe?
   }
@@ -157,9 +157,9 @@ struct JDirectArrayTranslator {
     };
     const jmethodID method_wrap_byte_buffer {
       djinni::jniGetStaticMethodID(
-	    clazz.get(),
-		"wrap",
-		"(Ljava/nio/ByteBuffer;)Lcom/dropbox/djinnix/DirectArray;")
+        clazz.get(),
+        "wrap",
+        "(Ljava/nio/ByteBuffer;)Lcom/dropbox/djinnix/DirectArray;")
     };
   };
 

@@ -43,8 +43,8 @@ inline bool ArrayCompare(ActualT &actual, ExpectedT &expected) {
   if (actual.empty() != expected.empty()) {
     DJXT_LOG_ERROR(
       "Actual empty (not?), but expected is not empty (empty?)\n" <<
-      "actual empty: " << actual.empty() << "\n" <<
-      "expected empty: " << expected.empty());
+      "actual empty: " << actual.empty() << "(size: " << actual.size() << ")\n" <<
+      "expected empty: " << expected.empty() << "(size: " << expected.size() << ")");
     return false;
   } else if (actual.empty() && expected.empty()) {
     return true;
