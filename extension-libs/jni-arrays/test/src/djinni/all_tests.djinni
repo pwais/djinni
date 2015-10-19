@@ -17,5 +17,7 @@ test_heap_array = interface + c {
 test_direct_array = interface + c {
   static check_null_direct_array(da: jdirectarray): bool;
   static check_direct_bb_array_contents(da: jdirectarray, expected: binary): bool;
+  static create_direct_bb_fascade(contents: binary): jdirectarray;
+  static create_direct_bb(contents: binary): jdirectarray;
 }
 

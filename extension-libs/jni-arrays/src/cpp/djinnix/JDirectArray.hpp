@@ -77,7 +77,7 @@ public:
   inline DirectArrayRef getArray() const {
     if (hasArray()) {
       JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-      DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
+      DJINNI_ASSERT(jniEnv, jniEnv);
 
       void *addr = jniEnv->GetDirectBufferAddress(jdbb_.get());
       jlong capacity = jniEnv->GetDirectBufferCapacity(jdbb_.get());
@@ -95,11 +95,8 @@ public:
   // as a handle to the nio.DirectByteBuffer.  Note that the JDirectArray
   // does NOT take ownership of the given `data` memory.
   inline static JDirectArray createDirectFascadeFor(void * data, size_t size) {
-    // Prevent invalid JVM calls
-    if (!data || size == 0) { return JDirectArray(); }
-
     JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-    DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
+    DJINNI_ASSERT(jniEnv, jniEnv);
 
     JDirectArray da;
     da.jdbb_ =
@@ -108,6 +105,33 @@ public:
         jniEnv->NewDirectByteBuffer(data, size));
     djinni::jniExceptionCheck(jniEnv);
 
+    return da;
+  }
+
+  // Have the JVM allocate a (direct) ByteBuffer of `size` and create
+  // a JDirectArray referencing the buffer.  Use this factory if you
+  // want to move ownership of memory to the JVM and expose the
+  // memory as a ByteBuffer.
+  inline static JDirectArray allocateDirectBB(int32_t size) {
+    if (size < 0) { return JDirectArray(); } // Otherwise, Java will throw
+
+    JNIEnv *jniEnv = djinni::jniGetThreadEnv();
+    DJINNI_ASSERT(jniEnv, jniEnv);
+
+    const auto &data = djinni::JniClass<ByteBufferInfo>::get();
+
+    const jint capacity = size;
+    jobject jdbb =
+        jniEnv->CallStaticObjectMethod(
+            data.clazz.get(),
+            data.method_allocate_direct,
+            capacity);
+    djinni::jniExceptionCheck(jniEnv);
+
+    JDirectArray da;
+    if (jdbb != NULL) {
+      da = JDirectArray::wrapDirectByteBuffer(jniEnv, jdbb);
+    }
     return da;
   }
 
@@ -131,9 +155,20 @@ protected:
     return da;
   }
 
-  inline djinni::LocalRef<jobject> getDirectByteBufferLocalRef(JNIEnv *jniEnv) const {
-    return djinni::LocalRef<jobject>(jniEnv, jdbb_.get());
-  }
+  // Return the GlobalRef pointer; users should not try to take ownership!
+  inline jobject getDirectByteBufferRef() const { return jdbb_.get(); }
+
+  struct ByteBufferInfo {
+    const djinni::GlobalRef<jclass> clazz {
+      djinni::jniFindClass("java/nio/ByteBuffer")
+    };
+    const jmethodID method_allocate_direct {
+      djinni::jniGetStaticMethodID(
+          clazz.get(),
+          "allocateDirect",
+          "(I)Ljava/nio/ByteBuffer;")
+    };
+  };
 
 private:
   // The wrapped nio.DirectByteBuffer
@@ -151,9 +186,14 @@ struct JDirectArrayTranslator {
   using JniType = jobject;
 
   struct DirectArrayInfo {
-    const djinni::GlobalRef<jclass> clazz { djinni::jniFindClass("com/dropbox/djinnix/DirectArray") };
+    const djinni::GlobalRef<jclass> clazz {
+      djinni::jniFindClass("com/dropbox/djinnix/DirectArray")
+    };
     const jmethodID method_get_as_direct_byte_buffer {
-      djinni::jniGetMethodID(clazz.get(), "getAsDirectByteBuffer", "()Ljava/nio/ByteBuffer;")
+      djinni::jniGetMethodID(
+        clazz.get(),
+        "getAsDirectByteBuffer",
+        "()Ljava/nio/ByteBuffer;")
     };
     const jmethodID method_wrap_byte_buffer {
       djinni::jniGetStaticMethodID(
@@ -166,12 +206,16 @@ struct JDirectArrayTranslator {
   using Boxed = JDirectArrayTranslator;
 
   static CppType toCpp(JNIEnv* jniEnv, JniType j) {
-    assert(j != nullptr); // TODO: eliable asserts ?
+    DJINNI_ASSERT_MSG(j, jniEnv, "Expected non-null Java instance.");
     const auto &data = djinni::JniClass<DirectArrayInfo>::get();
-    assert(jniEnv->IsInstanceOf(j, data.clazz.get())); // TODO: eliable asserts ?
+    DJINNI_ASSERT_MSG(
+      jniEnv->IsInstanceOf(j, data.clazz.get()),
+      jniEnv,
+      "Instance is of wrong class type.");
 
     // Does the DirectArray wrap a DirectByteBuffer?
-    jobject jdbb = jniEnv->CallObjectMethod(j, data.method_get_as_direct_byte_buffer);
+    jobject jdbb =
+        jniEnv->CallObjectMethod(j, data.method_get_as_direct_byte_buffer);
     djinni::jniExceptionCheck(jniEnv);
     if (jdbb != NULL) {
       return JDirectArray::wrapDirectByteBuffer(jniEnv, jdbb);
@@ -181,18 +225,20 @@ struct JDirectArrayTranslator {
   }
 
   static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
-    auto dbb_ref = c.getDirectByteBufferLocalRef(jniEnv);
-    if (dbb_ref) {
-      const auto& data = djinni::JniClass<DirectArrayInfo>::get();
-      auto j =
-        djinni::LocalRef<jobject>(
-          jniEnv,
-          jniEnv->CallStaticObjectMethod(data.clazz.get(), data.method_wrap_byte_buffer, *dbb_ref));
-      djinni::jniExceptionCheck(jniEnv);
-      return j;
-    }
+    const auto& data = djinni::JniClass<DirectArrayInfo>::get();
+    auto j =
+      djinni::LocalRef<jobject>(
+        jniEnv,
+        jniEnv->CallStaticObjectMethod(
+          data.clazz.get(),
+          data.method_wrap_byte_buffer,
+          c.getDirectByteBufferRef()));
+            // NB: if `c` has no ByteBuffer, the result is a
+            // `djinnix.DirectArray` with null
+            // `mDirectByteBuffer` member
 
-    return nullptr;
+    djinni::jniExceptionCheck(jniEnv);
+    return j;
   }
 };
 
