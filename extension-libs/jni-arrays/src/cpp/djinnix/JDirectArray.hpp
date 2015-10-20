@@ -141,10 +141,10 @@ public:
   JDirectArray(JDirectArray &&other) = default;
   JDirectArray &operator=(JDirectArray &&other) = default;
 
+  JDirectArray() { }
+
 protected:
   friend struct ::djinnix::jni::JDirectArrayTranslator;
-
-  JDirectArray() { }
 
   // Wrap the djinnix.DirectArray instance `j` on the JVM heap
   // and return the created wrapper.

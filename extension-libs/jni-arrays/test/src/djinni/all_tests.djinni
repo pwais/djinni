@@ -14,10 +14,38 @@ test_heap_array = interface + c {
   static check_array_contents(a: jheaparray, expected: binary): bool;
 }
 
+# A test object that owns a JDirectArray
 test_direct_array = interface + c {
+
+  ### Test cases
+
+  # Special test case for null-check
   static check_null_direct_array(da: jdirectarray): bool;
-  static check_direct_bb_array_contents(da: jdirectarray, expected: binary): bool;
-  static create_direct_bb_fascade(contents: binary): jdirectarray;
-  static create_direct_bb(contents: binary): jdirectarray;
+
+  ### Instance Utils
+
+  # Wrap the given array (and release the previously owned array implicitly)
+  wrap(da: jdirectarray): bool;
+  
+  # Write (a *copy*) of `content` bytes into the wrapped array
+  write(contents: binary): bool;
+  
+  # Check that the wrapped array contains `expected_contents`
+  check(expected_contents: binary): bool;
+  
+  # Release ownership of the wrapped array (to Java); *move operation*
+  takeArray(): jdirectarray;
+
+
+  ### Factories
+
+  # Create a test object that does NOT own an array
+  static create(): test_direct_array;
+
+  # Create a test object wrapping a Direct Byte Buffer
+  static allocateDirect(size: i32): test_direct_array;
+
+  # Create a test object wrapping a std::vector
+  static allocateFascade(size: i32): test_direct_array;
 }
 

@@ -16,50 +16,55 @@
 
 #include <vector>
 
-#include "test_direct_array.hpp"
+#include "test_direct_array_impl.hpp"
 
 #include "djinnix_test/util.hpp"
 
 namespace djinnix_test {
 
-static std::vector<uint8_t> kTestBuffer;
+std::shared_ptr<TestDirectArray>
+TestDirectArray::allocateDirect(int32_t size) {
+  TestDirectArrayImpl *tda = new TestDirectArrayImpl();
+  std::shared_ptr<TestDirectArray> tdap(tda);
+
+  auto da = ::djinnix::JDirectArray::allocateDirectBB(size);
+  assert(da.hasArray()); // Failed to create a Direct Byte Buffer
+  auto array_ref = da.getArray();
+  assert(array_ref.size() == size);
+    // Allocated ByteBuffer has wrong size
+
+  tda->setDirectArray(std::move(da));
+  return tdap;
+}
+
+std::shared_ptr<TestDirectArray>
+TestDirectArray::allocateFascade(int32_t size) {
+  TestDirectArrayImpl *tda = new TestDirectArrayImpl();
+  std::shared_ptr<TestDirectArray> tdap(tda);
+
+  auto &tda_buf = tda->getNativeBufRef();
+  tda_buf.resize(size);
+
+  auto da =
+    ::djinnix::JDirectArray::createDirectFascadeFor(
+        tda_buf.data(),
+        tda_buf.size());
+  assert(da.hasArray()); // Failed to create a Direct Byte Buffer
+  auto array_ref = da.getArray();
+  assert(array_ref.size() == size);
+    // Allocated ByteBuffer has wrong size
+
+  tda->setDirectArray(std::move(da));
+  return tdap;
+}
+
+std::shared_ptr<TestDirectArray> TestDirectArray::create() {
+  TestDirectArrayImpl *tda = new TestDirectArrayImpl();
+  return std::shared_ptr<TestDirectArray>(tda);
+}
 
 bool TestDirectArray::check_null_direct_array(::djinnix::JDirectArray da) {
   return !da.hasArray();
-}
-
-bool TestDirectArray::check_direct_bb_array_contents(
-    ::djinnix::JDirectArray da,
-    const std::vector<uint8_t> &expected) {
-
-  if (!da.hasArray()) {
-    DJXT_LOG_ERROR("JDirectArray does not have a buffer");
-	return false;
-  }
-  
-  auto array_ref = da.getArray();
-  return djinnix_test::ArrayCompare(array_ref, expected);
-}
-
-::djinnix::JDirectArray TestDirectArray::create_direct_bb_fascade(
-    const std::vector<uint8_t> & contents) {
-
-  kTestBuffer = contents;
-  return ::djinnix::JDirectArray::createDirectFascadeFor(
-      kTestBuffer.data(),
-      kTestBuffer.size());
-}
-
-::djinnix::JDirectArray TestDirectArray::create_direct_bb(
-		const std::vector<uint8_t> & contents) {
-
-  auto da = ::djinnix::JDirectArray::allocateDirectBB(contents.size());
-  assert(da.hasArray()); // Failed to create a Direct Byte Buffer
-  auto array_ref = da.getArray();
-  assert(array_ref.size() == contents.size());
-    // Allocated ByteBuffer has wrong size
-  memcpy(array_ref.data(), contents.data(), array_ref.size());
-  return da;
 }
 
 }  /* namespace djinnix_test */
