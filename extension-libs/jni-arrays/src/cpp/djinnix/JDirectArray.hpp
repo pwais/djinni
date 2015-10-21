@@ -71,11 +71,13 @@ private:
 class JDirectArray final {
 public:
 
-  inline bool hasArray() const noexcept { return jdbb_ != nullptr; }
+  inline bool hasArray() const noexcept {
+    return jdbb_ != nullptr || unsafe_data_ != nullptr;
+  }
 
   // Create and return an (unowning) reference to the underlying array
   inline DirectArrayRef getArray() const {
-    if (hasArray()) {
+    if (jdbb_) {
       JNIEnv * jniEnv = djinni::jniGetThreadEnv();
       DJINNI_ASSERT(jniEnv, jniEnv);
 
@@ -84,16 +86,19 @@ public:
       djinni::jniExceptionCheck(jniEnv);
 
       return DirectArrayRef(addr, capacity);
+    } else if (unsafe_data_) {
+      return DirectArrayRef(unsafe_data_, unsafe_size_);
     } else {
       return DirectArrayRef();
     }
-    // TODO: branch for Unsafe?
   }
 
-  // Have the JVM wrap the native (off-JVM-heap) array at `data` of `size`
-  // with a nio.DirectByteBuffer and return a JDirectArray that serves
-  // as a handle to the nio.DirectByteBuffer.  Note that the JDirectArray
-  // does NOT take ownership of the given `data` memory.
+  /**
+   * Have the JVM wrap the native (off-JVM-heap) array at `data` of `size`
+   * with a nio.DirectByteBuffer and return a JDirectArray that serves
+   * as a handle to the nio.DirectByteBuffer.  Note that the JDirectArray
+   * does NOT take ownership of the given `data` memory.
+   */
   inline static JDirectArray createDirectFascadeFor(void * data, size_t size) {
     JNIEnv * jniEnv = djinni::jniGetThreadEnv();
     DJINNI_ASSERT(jniEnv, jniEnv);
@@ -108,10 +113,12 @@ public:
     return da;
   }
 
-  // Have the JVM allocate a (direct) ByteBuffer of `size` and create
-  // a JDirectArray referencing the buffer.  Use this factory if you
-  // want to move ownership of memory to the JVM and expose the
-  // memory as a ByteBuffer.
+  /**
+   * Have the JVM allocate a (direct) ByteBuffer of `size` and create
+   * a JDirectArray referencing the buffer.  Use this factory if you
+   * want to move ownership of memory to the JVM and expose the
+   * memory as a ByteBuffer.
+   */
   inline static JDirectArray allocateDirectBB(int32_t size) {
     if (size < 0) { return JDirectArray(); } // Otherwise, Java will throw
 
@@ -127,6 +134,12 @@ public:
             data.method_allocate_direct,
             capacity);
     djinni::jniExceptionCheck(jniEnv);
+      // NB: the DirectByteBuffer class is *not* an official part of
+      // a JRE; Android doesn't have it. OpenJDK uses sun.misc.Unsafe
+      // to allocate the DirectByteBuffer, tho Unsafe may undergo API
+      // changes.  We leverage ByteBuffer#allocateDirect() because it's
+      // likely the most stable API.  Performance isn't great, but
+      // we'd like for users to allocate fewer, larger buffers if possible.
 
     JDirectArray da;
     if (jdbb != NULL) {
@@ -141,7 +154,10 @@ public:
   JDirectArray(JDirectArray &&other) = default;
   JDirectArray &operator=(JDirectArray &&other) = default;
 
-  JDirectArray() { }
+  JDirectArray()
+    : unsafe_data_(nullptr),
+      unsafe_size_(0)
+  { }
 
 protected:
   friend struct ::djinnix::jni::JDirectArrayTranslator;
@@ -155,8 +171,43 @@ protected:
     return da;
   }
 
+  struct UnsafeArrayInfo {
+    const djinni::GlobalRef<jclass> clazz {
+      djinni::jniFindClass("com/dropbox/djinnix/UnsafeArray")
+    };
+
+    /*
+     * NB: For JNI symbols, try
+     *   $ javap -classpath build/classes/ -s com.dropbox.djinnix.DirectArray
+     */
+
+    const jfieldID field_address {
+      djinni::jniGetFieldID(clazz.get(), "address", "J")
+    };
+    const jfieldID field_size {
+      djinni::jniGetFieldID(clazz.get(), "size", "J")
+    };
+  };
+
+
+  // Wrap the (address, size) from a `djinnix.UnsafeArray` and
+  // return the created wrapper.  *Never owns the array*.
+  inline static JDirectArray wrapUnsafeArray(JNIEnv *jniEnv, jobject j) {
+    JDirectArray da;
+
+    const auto& unsafe_data = djinni::JniClass<UnsafeArrayInfo>::get();
+    da.unsafe_data_ = jniEnv->GetLongField(j, unsafe_data.field_address);
+    da.unsafe_size_ = jniEnv->GetLongField(j, unsafe_data.field_size);
+    djinni::jniExceptionCheck(jniEnv);
+
+    return da;
+  }
+
   // Return the GlobalRef pointer; users should not try to take ownership!
-  inline jobject getDirectByteBufferRef() const { return jdbb_.get(); }
+  inline jobject getDirectByteBufferRef() const noexcept { return jdbb_.get(); }
+
+  inline void *getUnsafeData() const noexcept { return unsafe_data_; }
+  inline size_t getUnsafeSize() const noexcept { return unsafe_size_; }
 
   struct ByteBufferInfo {
     const djinni::GlobalRef<jclass> clazz {
@@ -171,14 +222,45 @@ protected:
   };
 
 private:
-  // The wrapped nio.DirectByteBuffer
+  // The wrapped nio.DirectByteBuffer.  Can own this ref.
   djinni::GlobalRef<jobject> jdbb_;
 
-  // TODO: wrap unsafe
+  // Wrapped Unsafe array data
+  void *unsafe_data_;   // Weak, *copyable*
+  size_t unsafe_size_;
 };
 
 
 namespace jni {
+
+// TODO: NOT inline, add docs
+inline void freeUnsafeAllocated(void *addr) {
+  if (!addr) { return; }
+
+  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
+  DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
+
+  struct UnsafeArrayUnsafeSupportInfo {
+    const djinni::GlobalRef<jclass> clazz {
+      djinni::jniFindClass("com/dropbox/djinnix/UnsafeArray$UnsafeSupport")
+    };
+    const jmethodID method_free_memory {
+      djinni::jniGetStaticMethodID(
+        clazz.get(),
+        "freeMemory",
+        "(J)V")
+    };
+  };
+
+  const auto &unsafe_data =
+    djinni::JniClass<UnsafeArrayUnsafeSupportInfo>::get();
+
+  jniEnv->CallStaticObjectMethod(
+    unsafe_data.clazz.get(),
+    unsafe_data.method_free_memory,
+    addr);
+  djinni::jniExceptionCheck(jniEnv);
+}
 
 // djinni type translator for JDirectArray
 struct JDirectArrayTranslator {
@@ -189,17 +271,35 @@ struct JDirectArrayTranslator {
     const djinni::GlobalRef<jclass> clazz {
       djinni::jniFindClass("com/dropbox/djinnix/DirectArray")
     };
-    const jmethodID method_get_as_direct_byte_buffer {
-      djinni::jniGetMethodID(
-        clazz.get(),
-        "getAsDirectByteBuffer",
-        "()Ljava/nio/ByteBuffer;")
-    };
+
+    /*
+     * NB: For JNI symbols, try
+     *   $ javap -classpath build/classes/ -s com.dropbox.djinnix.DirectArray
+     */
+
     const jmethodID method_wrap_byte_buffer {
       djinni::jniGetStaticMethodID(
         clazz.get(),
         "wrap",
         "(Ljava/nio/ByteBuffer;)Lcom/dropbox/djinnix/DirectArray;")
+    };
+    const jmethodID method_wrap_address_size {
+      djinni::jniGetStaticMethodID(
+        clazz.get(),
+        "wrap",
+        "(JJ)Lcom/dropbox/djinnix/DirectArray;")
+    };
+    const jmethodID method_get_byte_buffer {
+      djinni::jniGetMethodID(
+        clazz.get(),
+        "getByteBuffer",
+        "()Ljava/nio/ByteBuffer;")
+    };
+    const jmethodID method_unsafe_array {
+      djinni::jniGetMethodID(
+        clazz.get(),
+        "getUnsafeArray",
+        "()Lcom/dropbox/djinnix/UnsafeArray;")
     };
   };
 
@@ -215,10 +315,17 @@ struct JDirectArrayTranslator {
 
     // Does the DirectArray wrap a DirectByteBuffer?
     jobject jdbb =
-        jniEnv->CallObjectMethod(j, data.method_get_as_direct_byte_buffer);
+        jniEnv->CallObjectMethod(j, data.method_get_byte_buffer);
     djinni::jniExceptionCheck(jniEnv);
     if (jdbb != NULL) {
       return JDirectArray::wrapDirectByteBuffer(jniEnv, jdbb);
+    }
+
+    // Does DirectArray wrap an UnsafeArray?
+    jobject jua =
+        jniEnv->CallObjectMethod(j, data.method_unsafe_array);
+    if (jua != NULL) {
+
     }
 
     return JDirectArray();
@@ -226,16 +333,26 @@ struct JDirectArrayTranslator {
 
   static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
     const auto& data = djinni::JniClass<DirectArrayInfo>::get();
-    auto j =
-      djinni::LocalRef<jobject>(
-        jniEnv,
-        jniEnv->CallStaticObjectMethod(
-          data.clazz.get(),
-          data.method_wrap_byte_buffer,
-          c.getDirectByteBufferRef()));
-            // NB: if `c` has no ByteBuffer, the result is a
-            // `djinnix.DirectArray` with null
-            // `mDirectByteBuffer` member
+    djinni::LocalRef<jobject> j;
+
+    // First check Unsafe, because otherwise we'll just create a DirectArray
+    // with a null ByteBuffer
+    if (c.getUnsafeData()) {
+      j = djinni::LocalRef<jobject>(
+                jniEnv,
+                jniEnv->CallStaticObjectMethod(
+                  data.clazz.get(),
+                  data.method_wrap_address_size,
+                  c.getUnsafeData(),
+                  c.getUnsafeSize()));
+    } else {
+      j = djinni::LocalRef<jobject>(
+                jniEnv,
+                jniEnv->CallStaticObjectMethod(
+                  data.clazz.get(),
+                  data.method_wrap_byte_buffer,
+                  c.getDirectByteBufferRef()));
+    }
 
     djinni::jniExceptionCheck(jniEnv);
     return j;

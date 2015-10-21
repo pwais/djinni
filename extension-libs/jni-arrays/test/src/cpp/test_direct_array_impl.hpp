@@ -80,7 +80,7 @@ public:
   std::vector<uint8_t> &getNativeBufRef() {
     return buf_;
   }
-  
+
 protected:
   ::djinnix::JDirectArray da_;
   std::vector<uint8_t> buf_; // for fascade tests

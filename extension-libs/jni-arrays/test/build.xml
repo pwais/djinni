@@ -29,6 +29,7 @@
 	<property name="djinni_root" value="../../../"/>
     <property name="jni_arrays_root" value="../"/>
 	<javac destdir="build/classes" includeantruntime="false" encoding="UTF-8" debug="on">
+      <compilerarg value="-XDignore.symbol.file" /> <!-- Silence Unsafe warnings -->
       <classpath>
         <fileset dir="${djinni_root}/deps/java/"><include name="*.jar"/></fileset>
         <fileset dir="${djinni_root}/deps/java/test"><include name="*.jar"/></fileset>
