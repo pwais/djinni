@@ -23,173 +23,120 @@
 
 #include "djinni_support.hpp"
 
+#include "djinnix/JArrayRef.hpp"
+
 namespace djinnix {
 
-class CriticalArray;
+class ArrayRef;
+class CriticalArrayRef;
 class JHeapArray;
 
-namespace jni { struct JHeapArrayTranslator; } /* namespace jni */
+namespace jni { struct JHeapArrayTranslator; }
 
-/*
- * A *critical* array backed with data from a Java byte[], where
- * the reference is critical because it may block Java GC.
+/**
+ * A *critical* array backed with data from a Java byte[];
+ * the reference is *critical* because it may block Java GC
+ * and is not necessarily thread-safe.  Provides the most
+ * performant access but carries some constraints.
+ *
+ * In particular, JNI *REQUIRES* that this `CriticalArrayRef` be used in
+ * the same thread (and during the same JNI call) as the parent `JHeapArray`
+ * that created this instance.  Otherwise, the JVM is free to invalidate the
+ * pointer (e.g. through a move of the underlying array data).
  */
-class CriticalArray final {
+class CriticalArrayRef final : public JArrayRef {
 public:
 
-  ///
-  /// Read Access
-  ///
-
-  // Direct access to underlying `byte[]` (if the JVM supports zero-copy reads)
-  inline void *data() const noexcept { return data_; }
-  inline size_t size() const noexcept { return size_; }
-
-  // Is the array either empty or invalid?
-  inline bool empty() const noexcept { return !(data_ && jarr_); }
-
-  ///
-  /// Write Access
-  ///
-
-  // Does this array provide direct access to `byte[]` data?
-  // If not (i.e. it wraps a copy), you MUST use the `writeTo()` API below,
-  // else writing to `data()` just writes to a temporary copy of the
-  // wrapped `byte[]`.
-  inline bool isDirect() const noexcept { return is_direct_; }
-
-  // Write data from `src` into the `byte[]` and return the no. bytes written
-  inline int32_t writeTo(const void * src, int32_t length) {
-    return writeTo(0, src, length);
-  }
-
-  // Write data from `src` into `byte[]` starting at position `start`
-  // and return the number of bytes written; returns 0 upon error.
-  inline int32_t writeTo(int32_t start, const void * src, int32_t length) {
-
-    if (empty()) { return 0; }
-      // Don't write if this wrapper is invalid
-
-    if (start + length > size_) { length = size_ - start; }
-      // Don't write past the end of the array
-
-    if (length <= 0) { return 0; }
-      // Skip empty writes
-
-
-    if (isDirect()) {
-      std::memcpy((uint8_t *)data_ + start, src, length);
-    } else {
-      JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-      DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
-
-      jniEnv->SetByteArrayRegion(jarr_, start, length, reinterpret_cast<const jbyte*>(src));
-      djinni::jniExceptionCheck(jniEnv);
-    }
-
-	return length;
-  }
-
-  ///
-  /// Utils
-  ///
-
-  // Forcibly release the underlying critical handle on the reference `byte[]`.
+  // Forcibly release the underlying critical handle on the referenced `byte[]`.
   // Useful if you want to, for example, unblock the JVM GC before this
-  // CriticalArray instance expires.
-  inline void release() {
-    if (!empty()) {
-      JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-      DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
+  // CriticalArrayRef instance expires.
+  void release();
 
-      jniEnv->ReleasePrimitiveArrayCritical(jarr_, data_, JNI_ABORT);
-      djinni::jniExceptionCheck(jniEnv);
-    }
+  // Only movable, since we release() upon dealloc
+  CriticalArrayRef(CriticalArrayRef &&other);
+  CriticalArrayRef &operator=(CriticalArrayRef &&other);
 
-    data_ = nullptr;
-    size_ = 0;
-    is_direct_ = false;
-    jarr_ = nullptr;
-  }
-
-
-  // Only movable
-  CriticalArray(const CriticalArray &) = delete;
-  CriticalArray &operator=(const CriticalArray &) = delete;
-
-  inline CriticalArray(CriticalArray &&other)
-    : data_(other.data_),
-      size_(other.size_),
-      is_direct_(other.is_direct_),
-      jarr_(other.jarr_) {
-
-    other.data_ = nullptr;
-    other.size_ = 0;
-    other.is_direct_ = false;
-    other.jarr_ = nullptr;
-  }
-
-  inline CriticalArray &operator=(CriticalArray &&other) {
-    if (jarr_ == other.jarr_) {
-      // Don't let `other` release() our data
-      other.data_ = nullptr;
-      other.size_ = 0;
-      other.is_direct_ = false;
-      other.jarr_ = nullptr;
-    } else {
-      if (!empty()) { release(); }
-      std::swap(data_, other.data_);
-      std::swap(size_, other.size_);
-      std::swap(is_direct_, other.is_direct_);
-      std::swap(jarr_, other.jarr_);
-    }
-    return *this;
-  }
-
-  ~CriticalArray() { release(); }
+  ~CriticalArrayRef() { release(); }
 
 protected:
+
+  // Copy to array via JNI call
+  int32_t writeToIndirect(
+      int32_t start,
+      const void *src,
+      int32_t length) override;
+
+  ///
+  /// Protected JHeapArray Interface
+  ///
+
   friend class JHeapArray;
 
-  CriticalArray() : data_(nullptr), size_(0), is_direct_(false), jarr_(nullptr) { }
+  inline CriticalArrayRef()  // Only JHeapArray-constructible
+    : JArrayRef(),
+      jarr_(nullptr),
+      jniEnv_(nullptr)
+  { }
 
-  static CriticalArray createCritical(jbyteArray jarr) {
-    CriticalArray arr;
-
-    if (!jarr) { return arr; }
-
-    JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-    DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
-
-    const jsize arr_length = jniEnv->GetArrayLength(jarr);
-    if (arr_length == 0) { return arr; }
-
-    jboolean is_copy = true;
-    void *data = jniEnv->GetPrimitiveArrayCritical(jarr, &is_copy);
-    if (!data) {
-      djinni::jniExceptionCheck(jniEnv); // Note any JVM exceptions
-      return arr;
-    }
-
-    arr.data_ = data;
-    arr.size_ = arr_length;
-    arr.is_direct_ = !is_copy;
-    arr.jarr_ = jarr;
-
-    djinni::jniExceptionCheck(jniEnv); // TODO: remove?
-    return arr;
-  }
+  static CriticalArrayRef create(JNIEnv *jniEnv, jbyteArray jarr);
 
 private:
-  void *data_;
-  size_t size_;
-  bool is_direct_;
-  jbyteArray jarr_; // Copy of a pointer; a *weak* reference
+  jbyteArray jarr_;
+  JNIEnv *jniEnv_;
 };
 
 
 
-/*
+/**
+ * An array backed with data from a Java byte[]. This reference is safer
+ * than `CriticalArrayRef` as it may be passed between threads and
+ * persists through JNI calls. Uses the `{Get,Release}ByteArrayElements()`
+ * API.
+ *
+ * Note the ref is *unlikely* to be zero-copy unless the JVM supports memory-
+ * pinning.
+ */
+class ArrayElementsRef final : public JArrayRef {
+public:
+
+  // Forcibly release the underlying handle on the referenced `byte[]`.
+  void release();
+
+  // Only movable
+  ArrayElementsRef(ArrayElementsRef &&other);
+  ArrayElementsRef &operator=(ArrayElementsRef &&other);
+
+  ~ArrayElementsRef() { release(); }
+
+protected:
+
+  /*
+   * NB: No need to override `writeToIndirect()` because
+   * we will use the `ReleaseByteArrayElements()` API to
+   * copy data if necessary.
+   */
+
+  ///
+  /// Protected JHeapArray Interface
+  ///
+  friend class JHeapArray;
+
+  inline ArrayElementsRef()  // Only JHeapArray-constructible
+    : JArrayRef(),
+      jarr_(nullptr),
+      jniEnv_(nullptr)
+  { }
+
+  static ArrayElementsRef create(JNIEnv *jniEnv, jbyteArray jarr);
+
+private:
+  jbyteArray jarr_;
+  JNIEnv *jniEnv_;
+};
+
+
+
+/**
  * Wraps a `byte[]` on the JVM's managed heap and provides read/write
  * access.  This class aims to abstract away JNI complexities and provide
  * best practices for reading/writing to on-heap arrays.  Notes:
@@ -206,31 +153,15 @@ public:
 
   inline bool empty() const noexcept { return jarr_ == nullptr; }
 
-  // Create and return a readable, *critical* reference to the wrapped `byte[]`
-  // TODO notes about thread safety, etc
-  inline CriticalArray getCritical() const {
-    return CriticalArray::createCritical(jarr_.get());
-  }
+  // Create and return a *critical* reference to the wrapped `byte[]`
+  CriticalArrayRef getCritical() const;
 
-  // TODO: non-critical access and a straight up fast copy might be nice.
+  // Create and return a standard reference to the wrapped `byte[]`
+  ArrayElementsRef getElements() const;
 
   // Have the JVM allocate a `byte[]` of `size` and return a JHeapArray
   // wrapping the created array.
-  inline static JHeapArray create(int32_t size) {
-    JNIEnv * jniEnv = djinni::jniGetThreadEnv();
-    DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
-
-    JHeapArray ha;
-    if (size == 0) { return ha; }
-
-    ha.jarr_ =
-      djinni::GlobalRef<jbyteArray>(
-        jniEnv,
-        jniEnv->NewByteArray(static_cast<jsize>(size)));
-    djinni::jniExceptionCheck(jniEnv);
-
-    return ha;
-  }
+  static JHeapArray create(int32_t size);
 
   // Only movable
   JHeapArray(const JHeapArray &) = delete;
@@ -238,61 +169,26 @@ public:
   JHeapArray(JHeapArray &&other) = default;
   JHeapArray &operator=(JHeapArray &&other) = default;
 
-protected:
-  friend struct ::djinnix::jni::JHeapArrayTranslator;
-
   JHeapArray() { }
 
-  // Wrap the existing `jarr` (a `byte[]`) on the JVM heap and return
-  // the created wrapper.
-  inline static JHeapArray wrap(JNIEnv *jniEnv, jbyteArray jarr) {
-    JHeapArray ha;
-    ha.jarr_ = djinni::GlobalRef<jbyteArray>(jniEnv, jarr);
-      // Don't let the JVM GC this array until the wrapper expires.
-    return ha;
-  }
+protected:
 
-  inline djinni::LocalRef<jbyteArray> createLocalRef(JNIEnv *jniEnv) const {
-    return djinni::LocalRef<jbyteArray>(jniEnv, jarr_.get());
-  }
+  ///
+  /// Protected API for JDirectArrayTranslator
+  ///
+
+  friend struct ::djinnix::jni::JHeapArrayTranslator;
+
+  inline djinni::GlobalRef<jbyteArray> &jarrRef() { return jarr_; }
+  inline const djinni::GlobalRef<jbyteArray> &jarr() const { return jarr_; }
 
 private:
   djinni::GlobalRef<jbyteArray> jarr_;
 };
 
-
-
-namespace jni {
-
-// djinni type translator for JHeapArray
-struct JHeapArrayTranslator {
-  using CppType = JHeapArray;
-  using JniType = jbyteArray;
-
-  struct Boxed {
-    using JniType = jobjectArray;
-    static CppType toCpp(JNIEnv* jniEnv, JniType j) {
-      assert(false); // TODO
-      return JHeapArray();
-    }
-
-    static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, CppType c) {
-      assert(false); // TODO
-      return nullptr;
-    }
-  };
-
-  static CppType toCpp(JNIEnv* jniEnv, JniType jarr) {
-    return JHeapArray::wrap(jniEnv, jarr);
-  }
-
-  static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
-    return c.createLocalRef(jniEnv);
-  }
-};
-
-} /* namespace jni */
 } /* namespace djinnix */
+
+#include "JHeapArray-inl.hpp"
 
 #endif /* DJINNIX_JHEAPARRAY_HPP_ */
 

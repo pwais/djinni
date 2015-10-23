@@ -23,9 +23,10 @@
 
 #include "djinni_support.hpp"
 
+#include "djinnix/JArrayRef.hpp"
+
 namespace djinnix {
 
-class DirectArrayRef;
 class JDirectArray;
 
 namespace jni {
@@ -35,7 +36,7 @@ namespace jni {
    * This method actually does a JNI call, which may in turn issue
    * a delete[] or free() (or free some other allocator); we use this
    * technique since the implementation of Unsafe is technically
-   * JVM-dependent.
+   * JVM- (and platform-) dependent.
    *
    * Use this method if you own the memory that your `JDirectArray`
    * wraps (i.e. you have moved it from Java to CPP).
@@ -49,40 +50,6 @@ namespace jni {
    */
   struct JDirectArrayTranslator;
 }
-
-/*
- * A (weak) reference to an array backed by off-JVM-heap
- * (i.e. unmanaged) memory.
- */
-class DirectArrayRef final {
-public:
-
-  // Direct access to underlying data
-  inline void * data() const noexcept { return data_; }
-  inline size_t size() const noexcept { return size_; }
-
-  // Is the array either empty or invalid?
-  inline bool empty() const noexcept { return !(data_ && size_ > 0); }
-
-  // Fully copyable and movable -- not an owning reference
-  DirectArrayRef(const DirectArrayRef &) = default;
-  DirectArrayRef &operator=(const DirectArrayRef &) = default;
-  DirectArrayRef(DirectArrayRef &&other) = default;
-  DirectArrayRef &operator=(DirectArrayRef &&other) = default;
-
-protected:
-  friend class JDirectArray;
-
-  DirectArrayRef() : data_(nullptr), size_(0) { }
-
-  explicit DirectArrayRef(void * data, size_t size)
-    : data_(data), size_(size)
-  { }
-
-private:
-  void *data_;
-  size_t size_;
-};
 
 
 
@@ -99,7 +66,7 @@ public:
   inline bool isUnsafe() const noexcept { return unsafe_data_ != nullptr; }
 
   // Create and return an (unowning) reference to the underlying array
-  DirectArrayRef getArray() const;
+  JArrayRef getArray() const;
 
   /**
    * Have the JVM wrap the native (off-JVM-heap) array at `data` of `size`
@@ -108,6 +75,8 @@ public:
    * does NOT take ownership of the given `data` memory.
    */
   static JDirectArray createDirectFascadeFor(void * data, size_t size);
+
+  // TODO: need a owned factory that includes disposer ..
 
   /**
    * Have the JVM allocate a (direct) ByteBuffer of `size` and create
@@ -122,16 +91,8 @@ public:
   // Only movable
   JDirectArray(const JDirectArray &) = delete;
   JDirectArray &operator=(const JDirectArray &) = delete;
-
   JDirectArray(JDirectArray &&other);
-    : jdbb_(std::move(other.jdbb_)),
-      unsafe_data_(nullptr),
-      unsafe_size_(0) {
-    std::swap(unsafe_data_, other.unsafe_data_);
-    std::swap(unsafe_size_, other.unsafe_size_);
-  }
-
-  JDirectArray &operator=(JDirectArray &&other) = default;
+  JDirectArray &operator=(JDirectArray &&other);
 
 protected:
 
@@ -142,10 +103,16 @@ protected:
   friend struct ::djinnix::jni::JDirectArrayTranslator;
 
   // Return the GlobalRef pointer; users should not try to take ownership!
-  inline jobject getDirectByteBufferRef() const noexcept { return jdbb_.get(); }
+  inline djinni::GlobalRef<jobject> &byteBufferRef() { return jdbb_; }
+  inline const djinni::GlobalRef<jobject> &byteBuffer() const {
+    return jdbb_;
+  }
 
-  inline void *getUnsafeData() const noexcept { return unsafe_data_; }
-  inline size_t getUnsafeSize() const noexcept { return unsafe_size_; }
+  inline void *&unsafeDataRef() { return unsafe_data_; }
+  inline void *unsafeData() const { return unsafe_data_; }
+
+  inline size_t &unsafeSizeRef() { return unsafe_size_; }
+  inline size_t unsafeSize() const { return unsafe_size_; }
 
 private:
   // The wrapped nio.DirectByteBuffer.  Can own this ref.

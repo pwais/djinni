@@ -26,20 +26,20 @@
 namespace djinnix {
 
 inline
-DirectArrayRef JDirectArray::getArray() const {
+JArrayRef JDirectArray::getArray() const {
   if (jdbb_) {
-    JNIEnv * jniEnv = djinni::jniGetThreadEnv();
+    JNIEnv *jniEnv = djinni::jniGetThreadEnv();
     DJINNI_ASSERT(jniEnv, jniEnv);
 
     void *addr = jniEnv->GetDirectBufferAddress(jdbb_.get());
     jlong capacity = jniEnv->GetDirectBufferCapacity(jdbb_.get());
     djinni::jniExceptionCheck(jniEnv);
 
-    return DirectArrayRef(addr, capacity);
+    return JArrayRef(addr, capacity, true);
   } else if (unsafe_data_) {
-    return DirectArrayRef(unsafe_data_, unsafe_size_);
+    return JArrayRef(unsafe_data_, unsafe_size_, true);
   } else {
-    return DirectArrayRef();
+    return JArrayRef(nullptr, 0, true); // make `isDirect()` consistent
   }
 }
 
@@ -65,6 +65,18 @@ JDirectArray JDirectArray::allocateDirectBB(int32_t size) {
   JNIEnv *jniEnv = djinni::jniGetThreadEnv();
   DJINNI_ASSERT(jniEnv, jniEnv);
 
+  struct ByteBufferInfo {
+    const djinni::GlobalRef<jclass> clazz {
+      djinni::jniFindClass("java/nio/ByteBuffer")
+    };
+    const jmethodID method_allocate_direct {
+      djinni::jniGetStaticMethodID(
+          clazz.get(),
+          "allocateDirect",
+          "(I)Ljava/nio/ByteBuffer;")
+    };
+  };
+  
   const auto &data = djinni::JniClass<ByteBufferInfo>::get();
 
   const jint capacity = size;
@@ -83,7 +95,7 @@ JDirectArray JDirectArray::allocateDirectBB(int32_t size) {
 
   JDirectArray da;
   if (jdbb != NULL) {
-    da = JDirectArray::wrapDirectByteBuffer(jniEnv, jdbb);
+    da.byteBufferRef() = djinni::GlobalRef<jobject>(jniEnv, jdbb);
   }
   return da;
 }
@@ -97,17 +109,17 @@ inline JDirectArray::JDirectArray(JDirectArray &&other)
     // Move the unsafe_data_ member to avoid accidental user double-free
 }
 
-inline JDirectArray &operator=(JDirectArray &&other) {
-  if (jarr_ != other.jarr_) { jarr_ = std::move(other.jarr_); }
+inline JDirectArray &JDirectArray::operator=(JDirectArray &&other) {
+  if (jdbb_ != other.jdbb_) { jdbb_ = std::move(other.jdbb_); }
   
   unsafe_data_ = other.unsafe_data_;
-  unsafe_size_ = other.unsafe_size;
+  unsafe_size_ = other.unsafe_size_;
     // NB: May leak `this`'s data! But user is responsible
     // for ownership management; we don't know if `this` owns
     // `unsafe_data_`.
   
   other.unsafe_data_ = nullptr;
-  other.unsafe_size = 0;
+  other.unsafe_size_ = 0;
     // Do try to prevent accidental user double-free
   
   return *this;
@@ -166,19 +178,7 @@ struct JDirectArrayTranslator {
   ///   NB: For JNI symbols, try
   ///   $ javap -classpath build/classes/ -s com.dropbox.djinnix.DirectArray
   ///
-  
-  struct ByteBufferInfo {
-    const djinni::GlobalRef<jclass> clazz {
-      djinni::jniFindClass("java/nio/ByteBuffer")
-    };
-    const jmethodID method_allocate_direct {
-      djinni::jniGetStaticMethodID(
-          clazz.get(),
-          "allocateDirect",
-          "(I)Ljava/nio/ByteBuffer;")
-    };
-  };
-  
+    
   struct DirectArrayInfo {
     const djinni::GlobalRef<jclass> clazz {
       djinni::jniFindClass("com/dropbox/djinnix/DirectArray")
@@ -242,7 +242,7 @@ struct JDirectArrayTranslator {
     djinni::jniExceptionCheck(jniEnv);
     if (jdbb != NULL) {
       JDirectArray da;
-      da.jdbb_ = djinni::GlobalRef<jobject>(jniEnv, j);
+      da.byteBufferRef() = djinni::GlobalRef<jobject>(jniEnv, j);
         // Don't let the JVM GC the ByteBuffer `j` until the wrapper expires.
       return da;
     }
@@ -253,8 +253,9 @@ struct JDirectArrayTranslator {
       const auto& unsafe_data = djinni::JniClass<UnsafeArrayInfo>::get();
       
       JDirectArray da;
-      da.unsafe_data_ = jniEnv->GetLongField(j, unsafe_data.field_address);
-      da.unsafe_size_ = jniEnv->GetLongField(j, unsafe_data.field_size);
+      da.unsafeDataRef() =
+        (void *) jniEnv->GetLongField(j, unsafe_data.field_address);
+      da.unsafeSizeRef() = jniEnv->GetLongField(j, unsafe_data.field_size);
       djinni::jniExceptionCheck(jniEnv);
       
       return da;
@@ -269,21 +270,21 @@ struct JDirectArrayTranslator {
 
     // First check Unsafe, because otherwise we'll just create a DirectArray
     // that *may* have a null ByteBuffer
-    if (c.getUnsafeData()) {
+    if (c.unsafeData()) {
       j = djinni::LocalRef<jobject>(
             jniEnv,
             jniEnv->CallStaticObjectMethod(
               data.clazz.get(),
               data.method_wrap_address_size,
-              c.getUnsafeData(),
-              c.getUnsafeSize()));
+              c.unsafeData(),
+              c.unsafeSize()));
     } else {
       j = djinni::LocalRef<jobject>(
             jniEnv,
             jniEnv->CallStaticObjectMethod(
               data.clazz.get(),
               data.method_wrap_byte_buffer,
-              c.getDirectByteBufferRef()));
+              c.byteBuffer().get()));
                 // NB: `c` is empty <=> `j` is empty too, null ByteBuffer
                 // is safe for `method_wrap_byte_buffer`
     }
