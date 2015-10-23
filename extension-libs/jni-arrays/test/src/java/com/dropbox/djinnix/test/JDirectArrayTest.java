@@ -46,7 +46,7 @@ public class JDirectArrayTest extends TestCase {
     // ... and Java-- by temporarily *moving* ownership of the test
     // object's array into Java ...
     DirectArray da = tda.takeArray();
-    Util.checkBBs(da.getAsDirectByteBuffer(), expected);
+    Util.checkBBs(da.getByteBuffer(), expected);
     
     // ... and restoring it.
     assertTrue(tda.wrap(da));
@@ -59,7 +59,7 @@ public class JDirectArrayTest extends TestCase {
   ///
   
   public void testNull() {
-    assertTrue(TestDirectArray.checkNullDirectArray(DirectArray.wrap(null)));
+    assertTrue(TestDirectArray.checkNullDirectArray(new DirectArray()));
   }
   
   public void testEmptyJava() {

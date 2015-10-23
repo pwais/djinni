@@ -112,15 +112,17 @@ inline JDirectArray::JDirectArray(JDirectArray &&other)
 inline JDirectArray &JDirectArray::operator=(JDirectArray &&other) {
   if (jdbb_ != other.jdbb_) { jdbb_ = std::move(other.jdbb_); }
   
-  unsafe_data_ = other.unsafe_data_;
-  unsafe_size_ = other.unsafe_size_;
-    // NB: May leak `this`'s data! But user is responsible
-    // for ownership management; we don't know if `this` owns
-    // `unsafe_data_`.
-  
-  other.unsafe_data_ = nullptr;
-  other.unsafe_size_ = 0;
-    // Do try to prevent accidental user double-free
+  if (unsafe_data_ == other.unsafe_data_) {
+    other.unsafe_data_ = nullptr;
+    other.unsafe_size_ = 0;
+      // Try to prevent accidental user double-free
+  } else {
+    std::swap(unsafe_data_, other.unsafe_data_);
+    std::swap(unsafe_size_, other.unsafe_size_);
+      // NB: May leak `this`'s data! But user is responsible
+      // for ownership management; we don't know if `this` owns
+      // `unsafe_data_`.
+  } 
   
   return *this;
 }
@@ -242,8 +244,8 @@ struct JDirectArrayTranslator {
     djinni::jniExceptionCheck(jniEnv);
     if (jdbb != NULL) {
       JDirectArray da;
-      da.byteBufferRef() = djinni::GlobalRef<jobject>(jniEnv, j);
-        // Don't let the JVM GC the ByteBuffer `j` until the wrapper expires.
+      da.byteBufferRef() = djinni::GlobalRef<jobject>(jniEnv, jdbb);
+        // Don't let the JVM GC the ByteBuffer `jdbb` until the wrapper expires
       return da;
     }
 

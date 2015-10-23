@@ -54,7 +54,8 @@ namespace jni {
 
 
 /*
- * TODO: docs
+ * TODO: docs, mebbe split unsafe and direct bb into different subclasses..
+ * unsafe move assign might be nicer
  */
 class JDirectArray final {
 public:
@@ -64,6 +65,7 @@ public:
   }
 
   inline bool isUnsafe() const noexcept { return unsafe_data_ != nullptr; }
+  inline bool isDirectBB() const noexcept { return jdbb_ != nullptr; }
 
   // Create and return an (unowning) reference to the underlying array
   JArrayRef getArray() const;

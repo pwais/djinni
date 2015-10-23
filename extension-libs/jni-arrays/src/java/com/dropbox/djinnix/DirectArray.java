@@ -78,31 +78,5 @@ public class DirectArray {
   
   public ByteBuffer getByteBuffer() { return mDirectByteBuffer; }
   public UnsafeArray getUnsafeArray() { return mUnsafeArray; }
-  
-  public ByteBuffer getAsDirectByteBuffer() {
-    if (mDirectByteBuffer != null) {
-      return mDirectByteBuffer;
-    } else {
-      return null;
-    }
-    
-    /**
-     * TODO:
-     *  * for Unsafe, we'd benefit from an OpenJDK DirectByteBuffer clone;
-     *    mebbe somebody has done this before?  for java, we'd like to 
-     *    be able to provide a byte buffer api (this shud be rolled into 
-     *    UnsafeArray).  for **native code**, we'd want to detect and just
-     *    get (add, size)... probably better to leave JDirectArray
-     *    working with direct ByteBuffer b/c it's an official API.
-     *  * then we can make the above function java-only and use the bytebuffer
-     *    api on unsafe
-     *  * perhaps DirectArray should free Unsafe on finalize ... 
-     */
-  }
-  
-  
-  
-  
-  
-  
+
 }

@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <project name="Djinni-JNI-Arrays-Test">
-  
+  <property name="djinni_root" value="../../../"/>
+  <property name="jni_arrays_root" value="../"/>
+
   <target name="compile">
     
 	<mkdir dir="build"/>
@@ -26,8 +28,6 @@
 	</exec>
 
     <mkdir dir="build/classes"/>
-	<property name="djinni_root" value="../../../"/>
-    <property name="jni_arrays_root" value="../"/>
 	<javac destdir="build/classes" includeantruntime="false" encoding="UTF-8" debug="on">
       <compilerarg value="-XDignore.symbol.file" /> <!-- Silence Unsafe warnings -->
       <classpath>

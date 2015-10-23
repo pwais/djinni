@@ -27,7 +27,7 @@ class JArrayRef {
 public:
 
   // Is the array either empty or invalid?
-  inline bool empty() const noexcept { return data_ == nullptr; }
+  inline bool empty() const noexcept { return size_ == 0; }
   
   // Does this array provide direct access to the Java array?
   // If not (i.e. it wraps a copy), you MUST use the `writeTo()` API below,
