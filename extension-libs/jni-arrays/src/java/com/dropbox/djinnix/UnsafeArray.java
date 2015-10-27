@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.Unsafe;
 
-public class UnsafeArray {
+public class UnsafeArray extends ByteArray {
   public long address = 0;
   public long size = 0;
   

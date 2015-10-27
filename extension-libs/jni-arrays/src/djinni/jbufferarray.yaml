@@ -1,0 +1,22 @@
+# An array of (off-JVM-heap) bytes wrapped in a (direct) Java nio.ByteBuffer
+---
+name: jbufferarray
+typedef: 'record'
+params: []
+prefix: ''
+cpp:
+  typename: '::djinnix::JBufferArrayHandle'
+  header: '"djinnix/JBufferArrayHandle.hpp"'
+  byValue: true
+java:
+  typename: 'java.nio.ByteBuffer'
+  boxed: 'java.nio.ByteBuffer'
+  reference: true
+  generic: false
+  hash: '%s.hashCode()'
+jni:
+  translator: '::djinnix::jni::JBufferArrayHandleTranslator'
+  header: '"djinnix/JBufferArrayHandle.hpp"'
+  typename: jobject
+  typeSignature: 'Ljava/nio/ByteBuffer;'
+

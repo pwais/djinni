@@ -20,8 +20,8 @@
 namespace djinnix {
 
 /**
- * A non-owning reference to a Java array; provides a single read/write API
- * for a variety of Java types.
+ * A *non-owning* reference to a Java array. Provides a single read/write API
+ * for a variety of Java array types.
  */
 class JArrayRef {
 public:
@@ -48,7 +48,7 @@ public:
 
   // Write data from `src` into the `byte[]` and return the number of
   // bytes written.
-  inline int32_t writeTo(const void * src, int32_t length) {
+  inline int32_t writeTo(const void *src, int32_t length) {
     return writeTo(0, src, length);
   }
 
@@ -59,8 +59,8 @@ public:
   // Only movable; some subclasses are non-copyable
   JArrayRef(const JArrayRef &) = delete;
   JArrayRef &operator=(const JArrayRef &) = delete;
-  JArrayRef(JArrayRef &&other);
-  JArrayRef &operator=(JArrayRef &&other);
+  JArrayRef(JArrayRef &&other) noexcept;
+  JArrayRef &operator=(JArrayRef &&other) noexcept;
 
   inline JArrayRef() noexcept : data_(nullptr), size_(0), is_direct_(false) { }
   

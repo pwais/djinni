@@ -1,12 +1,12 @@
-# TODO docs
+# An array of bytes that lives on the JVM's managed heap
 ---
 name: jheaparray
 typedef: 'record'
 params: []
 prefix: ''
 cpp:
-  typename: '::djinnix::JHeapArray'
-  header: '"djinnix/JHeapArray.hpp"'
+  typename: '::djinnix::JHeapArrayHandle'
+  header: '"djinnix/JHeapArrayHandle.hpp"'
   byValue: true
 java:
   typename: 'byte[]'
@@ -15,8 +15,8 @@ java:
   generic: false
   hash: '%s.hashCode()'
 jni:
-  translator: '::djinnix::jni::JHeapArrayTranslator'
-  header: '"djinnix/JHeapArray.hpp"'
+  translator: '::djinnix::jni::JHeapArrayHandleTranslator'
+  header: '"djinnix/JHeapArrayHandle.hpp"'
   typename: jbyteArray
   typeSignature: '[B'
 # TODO: perhaps support for other primitive arrays: http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html#wp9502

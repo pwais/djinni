@@ -70,6 +70,43 @@ public:
   // Create and return an (unowning) reference to the underlying array
   JArrayRef getArray() const;
 
+
+  /*
+   * what about:
+   *  * JArrayRef -- keep as-is
+   *  * JArrayHandle -- iface that has hasArray() / getArray() / allocate()
+   *  * Subclasses: J(Direct)ByteBufferHandle, JUnsafeArrayHandle,
+   *       JHeapArrayHandle (has getCritical() and getElements(),
+   *        default to safe getElements()).
+   *  * freeUnsafeAllocated() for JUnsafeArrayHandle.
+   *  * User can cast to get more specific interface, easy to add
+   *     subclasses for different types, unified translator
+   *
+   *  Java-side:
+   *    * DirectArray has subclasses for unsafe, byte buffer, use
+   *        IsInstanceOf in xlator
+   *    * byte[] still xlates as-is to JHeapArrayHandle
+   *
+   *  Ownership:
+   *    * to move, just give across border and forget.  we use Java refs
+   *    * to share cpp: i guess use shared ptr to handle ... that's what dij
+   *       is doing, right? could we just impl copy ctor that creates new
+   *       global ref ? maybe we call GC directly
+   *    * to share java: yea using refs to java objects should be ok.
+   *        can we unit test the java ref goin out of scope and then cpp
+   *        uses the obj?
+   *
+   *  Future:
+   *   * want a way to have a string of memory segments...
+   */
+
+
+
+
+
+
+
+
   /**
    * Have the JVM wrap the native (off-JVM-heap) array at `data` of `size`
    * with a nio.DirectByteBuffer and return a JDirectArray that serves

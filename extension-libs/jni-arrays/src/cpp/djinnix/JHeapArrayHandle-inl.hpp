@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#ifndef DJINNIX_JHEAPARRAY_INL_HPP_
-#define DJINNIX_JHEAPARRAY_INL_HPP_
+#ifndef DJINNIX_JHEAPARRAYHANDLE_INL_HPP_
+#define DJINNIX_JHEAPARRAYHANDLE_INL_HPP_
 
-#ifndef DJINNIX_JHEAPARRAY_HPP_
-#error "Include JHeapArray.hpp instead"
+#ifndef DJINNIX_JHEAPARRAYHANDLE_HPP_
+#error "Include JHeapArrayHandle.hpp instead"
 #endif
 
 #pragma once
@@ -26,20 +26,37 @@
 namespace djinnix {
 
 inline
-int32_t CriticalArrayRef::writeToIndirect(
-      int32_t start,
-      const void * src,
-      int32_t length) {
-
-  jniEnv_->SetByteArrayRegion(
-      jarr_,
-      start,
-      length,
-      reinterpret_cast<const jbyte*>(src));
-  djinni::jniExceptionCheck(jniEnv_);
-
-  return length;
+CriticalArrayRef JHeapArrayHandle::getCritical() const {
+  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
+  DJINNI_ASSERT(jniEnv, jniEnv);
+  return CriticalArrayRef::create(jniEnv, jarr_.get());
 }
+
+inline
+ArrayElementsRef JHeapArrayHandle::getElements() const {
+  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
+  DJINNI_ASSERT(jniEnv, jniEnv);
+  return ArrayElementsRef::create(jniEnv, jarr_.get());
+}
+
+inline
+JHeapArrayHandle JHeapArrayHandle::create(int32_t size) {
+  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
+  DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
+
+  JHeapArrayHandle ha;
+  if (size == 0) { return ha; }
+
+  ha.jarr_ =
+    djinni::GlobalRef<jbyteArray>(
+      jniEnv,
+      jniEnv->NewByteArray(static_cast<jsize>(size)));
+  djinni::jniExceptionCheck(jniEnv);
+
+  return ha;
+}
+
+
 
 inline
 void CriticalArrayRef::release() {
@@ -57,12 +74,12 @@ void CriticalArrayRef::release() {
 
 inline
 CriticalArrayRef::CriticalArrayRef(CriticalArrayRef &&other)
-  : JArrayRef(std::move(other)),
-    jarr_(other.jarr_), 
+  : jarr_(other.jarr_),
     jniEnv_(other.jniEnv_) {
 
   other.jarr_ = nullptr;
   other.jniEnv_ = nullptr;
+  JArrayRef(std::move(other));
 }
 
 inline
@@ -78,6 +95,22 @@ CriticalArrayRef &CriticalArrayRef::operator=(CriticalArrayRef &&other) {
   std::swap(jniEnv_, other.jniEnv_);
   JArrayRef::operator=(std::move(other));
   return *this;
+}
+
+inline
+int32_t CriticalArrayRef::writeToIndirect(
+      int32_t start,
+      const void * src,
+      int32_t length) {
+
+  jniEnv_->SetByteArrayRegion(
+      jarr_,
+      start,
+      length,
+      reinterpret_cast<const jbyte*>(src));
+  djinni::jniExceptionCheck(jniEnv_);
+
+  return length;
 }
 
 inline
@@ -107,13 +140,35 @@ CriticalArrayRef CriticalArrayRef::create(JNIEnv *jniEnv, jbyteArray jarr) {
 
 
 inline
+void ArrayElementsRef::release() {
+  if (jarr_) {
+    jniEnv_->ReleaseByteArrayElements(jarr_, (jbyte *)data_, 0);
+      /*
+       * Mode `0`:
+       *  * direct: data_ is simply un-pinned; no need to free data_
+       *  * non-direct: JVM copies from data_ to the managed heap array
+       *      and frees data_ (which is a JVM-allocated temporary)
+       *
+       * FMI other modes are JNI_{COMMIT,ABORT}
+       */
+    djinni::jniExceptionCheck(jniEnv_);
+  }
+
+  data_ = nullptr;
+  size_ = 0;
+  is_direct_ = false;
+  jarr_ = nullptr;
+  jniEnv_ = nullptr;
+}
+
+inline
 ArrayElementsRef::ArrayElementsRef(ArrayElementsRef &&other)
-  : JArrayRef(std::move(other)),
-    jarr_(other.jarr_),
+  : jarr_(other.jarr_),
     jniEnv_(other.jniEnv_) {
   
   other.jarr_ = nullptr;
   other.jniEnv_ = nullptr;
+  JArrayRef(std::move(other));
 }
 
 inline
@@ -155,67 +210,15 @@ ArrayElementsRef ArrayElementsRef::create(JNIEnv *jniEnv, jbyteArray jarr) {
   return arr;
 }
 
-inline
-void ArrayElementsRef::release() {
-  if (jarr_) {
-    jniEnv_->ReleaseByteArrayElements(jarr_, (jbyte *)data_, 0);
-      /*
-       * Mode `0`:
-       *  * direct: data_ is simply un-pinned; no need to free data_
-       *  * non-direct: JVM copies from data_ to the managed heap array
-       *      and frees data_ (which is a JVM-allocated temporary)
-       * 
-       * FMI other modes are JNI_{COMMIT,ABORT}
-       */
-    djinni::jniExceptionCheck(jniEnv_);
-  }
 
-  data_ = nullptr;
-  size_ = 0;
-  is_direct_ = false;
-  jarr_ = nullptr;
-  jniEnv_ = nullptr;
-}
-
-
-inline
-CriticalArrayRef JHeapArray::getCritical() const {
-  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
-  DJINNI_ASSERT(jniEnv, jniEnv);
-  return CriticalArrayRef::create(jniEnv, jarr_.get());
-}
-
-inline
-ArrayElementsRef JHeapArray::getElements() const {
-  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
-  DJINNI_ASSERT(jniEnv, jniEnv);
-  return ArrayElementsRef::create(jniEnv, jarr_.get());
-}
-
-inline
-JHeapArray JHeapArray::create(int32_t size) {
-  JNIEnv *jniEnv = djinni::jniGetThreadEnv();
-  DJINNI_ASSERT("Failed to obtain JNI env", jniEnv);
-
-  JHeapArray ha;
-  if (size == 0) { return ha; }
-
-  ha.jarr_ =
-    djinni::GlobalRef<jbyteArray>(
-      jniEnv,
-      jniEnv->NewByteArray(static_cast<jsize>(size)));
-  djinni::jniExceptionCheck(jniEnv);
-
-  return ha;
-}
 
 namespace jni {
 
 /**
- * Djinni type translator for JHeapArray
+ * Djinni type translator for JHeapArrayHandle
  */
-struct JHeapArrayTranslator {
-  using CppType = JHeapArray;
+struct JHeapArrayHandleTranslator {
+  using CppType = JHeapArrayHandle;
   using JniType = jbyteArray;
 
   // TODO: see if we can / want to support ... Byte[] ?
@@ -223,7 +226,7 @@ struct JHeapArrayTranslator {
     using JniType = jobjectArray;
     static CppType toCpp(JNIEnv* jniEnv, JniType j) {
       assert(false); // TODO
-      return JHeapArray();
+      return JHeapArrayHandle();
     }
 
     static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, CppType c) {
@@ -232,8 +235,12 @@ struct JHeapArrayTranslator {
     }
   };
 
+
+
   static CppType toCpp(JNIEnv* jniEnv, JniType jarr) {
-    JHeapArray ha;
+    DJINNI_ASSERT_MSG(j, jniEnv, "Expected non-null Java instance.");
+
+    JHeapArrayHandle ha;
     ha.jarrRef() = djinni::GlobalRef<jbyteArray>(jniEnv, jarr);
       // Don't let the JVM GC this array until the wrapper expires.
     return ha;
@@ -241,13 +248,12 @@ struct JHeapArrayTranslator {
 
   static djinni::LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& c) {
     auto jarrp = c.jarr().get();
+    djinni::LocalRef<JniType> j;
     if (jarrp) {
-      return djinni::LocalRef<JniType>(
-                      jniEnv,
-                      (jbyteArray)jniEnv->NewLocalRef(jarrp));
-    } else {
-      return nullptr;
-    } 
+      j = djinni::LocalRef<JniType>{ (jbyteArray)jniEnv->NewLocalRef(jarrp)) };
+    }
+    djinni::jniExceptionCheck(jniEnv);
+    return j;
   }
 
 };
@@ -255,4 +261,4 @@ struct JHeapArrayTranslator {
 } /* namespace jni */
 } /* namespace djinnix */
 
-#endif /* DJINNIX_JHEAPARRAY_INL_HPP_ */
+#endif /* DJINNIX_JHEAPARRAYHANDLE_INL_HPP_ */

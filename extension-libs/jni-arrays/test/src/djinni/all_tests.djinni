@@ -10,6 +10,27 @@
 #} deriving(eq, ord)
 # TODO write tests
 test_heap_array = interface + c {
+
+  ### Test Cases
+
+  # Special test case for null-check
+  static check_null_array(ha: jheaparray): bool;
+
+  ### Instance Utils: return false only if failure
+
+  # Wrap the given array (and release the previously owned array implicitly)
+  wrap(da: jheaparray): bool;
+
+  # Nativey write (a *copy*) of `content` bytes into the wrapped array
+  write(contents: binary): bool;
+
+  # Check that the wrapped array contains `expected_contents`
+  check(expected_contents: binary): bool;
+
+  # Release ownership of the wrapped array (to Java); *move operation*
+  takeArray(): jheaparray;
+
+
   static check_null_array(a: jheaparray): bool;
   static check_array_contents(a: jheaparray, expected: binary): bool;
 }
@@ -17,17 +38,17 @@ test_heap_array = interface + c {
 # A test object that owns a JDirectArray
 test_direct_array = interface + c {
 
-  ### Test cases
+  ### Test Cases
 
   # Special test case for null-check
   static check_null_direct_array(da: jdirectarray): bool;
 
-  ### Instance Utils
+  ### Instance Utils: return false only if failure
 
   # Wrap the given array (and release the previously owned array implicitly)
   wrap(da: jdirectarray): bool;
   
-  # Write (a *copy*) of `content` bytes into the wrapped array
+  # Natively write (a *copy*) of `content` bytes into the wrapped array
   write(contents: binary): bool;
   
   # Check that the wrapped array contains `expected_contents`

@@ -1,0 +1,22 @@
+# An array of (off-JVM-heap) bytes wrapped in a com.dropbox.djinnix.UnsafeArray
+---
+name: junsafearray
+typedef: 'record'
+params: []
+prefix: ''
+cpp:
+  typename: '::djinnix::JUnsafeArrayHandle'
+  header: '"djinnix/JUnsafeArrayHandle.hpp"'
+  byValue: true
+java:
+  typename: 'com.dropbox.djinnix.UnsafeArray'
+  boxed: 'com.dropbox.djinnix.UnsafeArray'
+  reference: true
+  generic: false
+  hash: '%s.hashCode()'
+jni:
+  translator: '::djinnix::jni::JUnsafeArrayHandleTranslator'
+  header: '"djinnix/JUnsafeArrayHandle.hpp"'
+  typename: jobject
+  typeSignature: 'Lcom/dropbox/djinnix/UnsafeArray;'
+
